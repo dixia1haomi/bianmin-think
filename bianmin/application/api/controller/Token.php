@@ -50,13 +50,13 @@ class Token
         $iv = $post['iv'];
 
         // 解密userinfo
-        $userinfo = (new GetUserInfo())->jiemi_UserInfo($code, $encryptedData, $iv);
+        $userinfo = (new GetUserInfo())->jiemi_UserInfo($code, $encryptedData, $iv,$sessionKey);
 
         // 新增或更新用户信息并返回uid
         $uid = User::create_or_Update_User($userinfo);
 
         // 生成token并缓存
-        $tokenKey = BaseToken::save_Cache_Token($userinfo['openId'], $uid);
+        $tokenKey = BaseToken::save_Cache_Token($userinfo['openId'], $uid,$sessionKey);
 
         // 返回token，昵称头像给客户端
         $arr = ['avatar_url' => $userinfo['avatarUrl'], 'nick_name' => $userinfo['nickName']];

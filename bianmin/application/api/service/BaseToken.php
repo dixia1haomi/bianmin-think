@@ -24,12 +24,13 @@ class BaseToken
     //准备令牌的value，
     //接受微信返回的数据和数据库返回的用户id
     //返回字符串,(原本是数组，但是框架的缓存只接受字符串value,所以json_encode)
-    public static function prepare_Token_Value($openid, $uid)
+    public static function prepare_Token_Value($openid, $uid,$sessionKey)
     {
         $tokenValue = [];
         $tokenValue['openid'] = $openid;
         $tokenValue['uid'] = $uid;
         $tokenValue['scope'] = 16;
+        $tokenValue['session_key'] = $sessionKey;
         return json_encode($tokenValue);
     }
 
@@ -48,9 +49,9 @@ class BaseToken
     }
 
     // 生成token，缓存并返回
-    public static function save_Cache_Token($openid,$uid){
+    public static function save_Cache_Token($openid,$uid,$sessionKey){
         $tokenKey = BaseToken::prepare_Token_Key();                          //获取token_key
-        $tokenValue = BaseToken::prepare_Token_Value($openid,$uid);          //获取token_value
+        $tokenValue = BaseToken::prepare_Token_Value($openid,$uid,$sessionKey);          //获取token_value
         $token_expire = config('wx_config.token_expire');                    //获取token过期时间
 
         $token = cache($tokenKey,$tokenValue,$token_expire);    //缓存token

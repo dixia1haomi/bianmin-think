@@ -14,6 +14,7 @@ use app\api\model\Bianminlist as bianminlistModel;
 use app\api\model\Img as imgModel;
 use app\api\model\User as userModel;
 use app\api\service\BaseToken;
+use app\api\service\userinfo\GetUserPhone;
 use app\exception\QueryDbException;
 use app\exception\Success;
 use app\api\controller\Cos as cosCon;
@@ -27,11 +28,11 @@ class Index
     }
 
 
-    // 获取列表
+    // 获取信息列表
     public function getList()
     {
         $model = new bianminlistModel();
-        $data = $model->with(['withUser', 'withImg'])->select();
+        $data = $model->with(['withUser', 'withImg'])->order('update_time desc')->select();
 
         throw new Success(['data' => $data]);
     }
@@ -65,7 +66,6 @@ class Index
     // 获取我的发布
     public function getMyfabu()
     {
-
         $uid = BaseToken::get_Token_Uid();
 
         $model = new bianminlistModel();
@@ -93,13 +93,11 @@ class Index
             return '出问题了,deleteMyfabu';                             // * 抛给客户端并且记录日志
         }
         throw new Success(['data' => $delete_bianmin_res]);
-
     }
 
     // 遍历删除COS图片和IMG表数据
     public function forDelete($imgArray)
     {
-
         if (count($imgArray) > 0) {
             // 有图片，准备删除COS
             $cos = new cosCon();
@@ -126,6 +124,63 @@ class Index
             // 没有图片，直接删除数据
             return true;
         }
+    }
+
+    // 增加指定数据点击量
+    public function incLiulangcishu()
+    {
+        $id = input('post.id');
+        $model = new bianminlistModel();
+        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu');
+
+        if ($liulangcishu === false) {
+            // 增加流浪次数失败了
+        }
+        throw new Success(['data' => $liulangcishu]);
+    }
+
+
+    // 刷新， 更新update_time
+    public function updateTime()
+    {
+        $id = input('post.id');
+        $model = new bianminlistModel();
+        $updatetime = $model->where(['id' => $id])->setField('update_time', time());
+
+        if ($updatetime === false) {
+            // 刷新更新时间失败了
+        }
+        throw new Success(['data' => $updatetime]);
+    }
+
+
+    // ----- 电话解密 -----
+    public function getPhone()
+    {
+        $params = input('post.');
+        $encryptedData = $params['encryptedData'];
+        $iv = $params['iv'];
+
+        // 解密userphone
+        $phone = (new GetUserPhone())->jiemi_UserPhone($encryptedData, $iv);
+
+        /**
+         * $phone
+         * countryCode:"86"                 区号
+         * phoneNumber:"15987419288"        用户绑定的手机号（国外手机号会有区号）
+         * purePhoneNumber:"15987419288"    没有区号的手机号
+        */
+
+        // 把电话号码写入数据库
+        $uid = BaseToken::get_Token_Uid();
+        $model = new userModel();
+
+        $updatephone = $model->where(['id' => $uid])->setField('phone', $phone["purePhoneNumber"]);
+
+        if ($updatephone === false) {
+            // 更新电话失败了
+        }
+        throw new Success(['data' => $phone["purePhoneNumber"]]);
     }
 
 }

@@ -2,45 +2,42 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/3/1 0001
- * Time: 下午 7:29
+ * Date: 2018/4/12 0012
+ * Time: 上午 6:18
  */
 
 namespace app\api\service\userinfo;
 
 
-use app\api\model\User;
+use app\api\service\BaseToken;
 use app\api\service\BaseWeChat;
 use app\exception\WeChatException;
-use think\Exception;
 
-class GetUserInfo
+class GetUserPhone
 {
 
     /**
      *  用户登陆，获取解密后的userinfo
      */
 
-    public function jiemi_UserInfo($code, $encryptedData, $iv, &$sessionKey)
+    public function jiemi_UserPhone($encryptedData, $iv)
     {
-
+        // 获取APPID
         $appid = config('wx_config.appid');
 
-        // 用code换取sessionKey
-        $wxRes = (new BaseWeChat())->loginCode($code);
-        $sessionKey = $wxRes['session_key'];
+        // 缓存中获取sessionKey
+        $sessionKey = BaseToken::get_Token_Value_Vars('session_key');
 
-
-        // 解密userinfo
+        // 解密userPhone
         $jiemi = new JiemiUserInfo($appid, $sessionKey);
         $errCode = $jiemi->decryptData($encryptedData, $iv, $data);   // $data == 解密后的数据
+
         if ($errCode == 0) {
             return json_decode($data, true);
         } else {
             // 异常
-            throw new WeChatException(['msg' => '解密userinfo失败，service/userinfo/GetUserInfo/jiemi_UserInfo']);
+            throw new WeChatException(['msg' => '解密userPhone失败，service/userinfo/GetUserPhone/jiemi_UserPhone']);
         }
     }
-
 
 }
