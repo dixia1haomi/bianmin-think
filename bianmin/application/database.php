@@ -19,7 +19,7 @@ return [
     // 用户名
     'username'        => 'root',
     // 密码
-    'password'        => '',
+    'password'        => '123456',
     // 端口
     'hostport'        => '',
     // 连接dsn
@@ -48,6 +48,7 @@ return [
     'auto_timestamp'  => true,
     // 时间字段取出后的默认时间格式
     'datetime_format' => 'Y/m/d H:i:s',
+//    'datetime_format' => 'Y/m/d',
     // 是否需要进行SQL性能分析
     'sql_explain'     => false,
 ];

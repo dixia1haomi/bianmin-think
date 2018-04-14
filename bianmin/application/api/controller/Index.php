@@ -69,7 +69,7 @@ class Index
         $uid = BaseToken::get_Token_Uid();
 
         $model = new bianminlistModel();
-        $res = $model->where('user_id', $uid)->with(['withImg'])->select();
+        $res = $model->where('user_id', $uid)->with(['withUser','withImg'])->limit(2)->select();
 
         throw new Success(['data' => $res]);
     }
@@ -164,6 +164,7 @@ class Index
         // 解密userphone
         $phone = (new GetUserPhone())->jiemi_UserPhone($encryptedData, $iv);
 
+//        return $phone;
         /**
          * $phone
          * countryCode:"86"                 区号

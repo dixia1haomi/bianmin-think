@@ -35,8 +35,7 @@ class GetUserPhone
         if ($errCode == 0) {
             return json_decode($data, true);
         } else {
-            // 异常
-            throw new WeChatException(['msg' => '解密userPhone失败，service/userinfo/GetUserPhone/jiemi_UserPhone']);
+            throw new WeChatException(['msg' => '解密userPhone失败，service/userinfo/GetUserPhone/jiemi_UserPhone', 'data' => $errCode]);
         }
     }
 
