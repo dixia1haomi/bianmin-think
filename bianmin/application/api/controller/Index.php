@@ -19,6 +19,9 @@ use app\api\service\userinfo\GetUserPhone;
 use app\exception\Success;
 use app\api\controller\Cos as cosCon;
 
+use app\api\model\Wenzhanglist as wenzhanglistModel;
+use app\api\model\Wenzhang as wenzhangModel;
+
 class Index
 {
 
@@ -208,6 +211,22 @@ class Index
             // 更新电话失败了
         }
         throw new Success(['data' => $phone["purePhoneNumber"]]);
+    }
+
+    // ----- 获取文章列表 -------
+    public function getWenzhangList(){
+        $model = new wenzhanglistModel();
+        $wenzhanglist = $model->limit(10)->select();
+
+        throw new Success(['data' => $wenzhanglist]);
+    }
+
+    // ----- 获取文章详情 -------
+    public function getWenzhangDetail($wenzhang_id){
+        $model = new wenzhangModel();
+        $wenzhangDetail = $model->where('wenzhang_id',$wenzhang_id)->find();
+
+        throw new Success(['data' => $wenzhangDetail]);
     }
 
 }

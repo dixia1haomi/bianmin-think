@@ -89,6 +89,7 @@ Route::post('api/cos/qianmingdanci', 'api/cos/cosQianMingDanci');   // COS签名
 //Route::post('api/cos/qianmingduoci', 'api/cos/cosQianMingDuoci');   // COS签名-多次
 //Route::post('api/cos/delete', 'api/cos/cosdelete');                 // 删除
 
+// 列表
 Route::post('api/index/getlist', 'api/Index/getList');            // 获取列表
 Route::post('api/index/create', 'api/Index/createList');          // 创建信息
 Route::post('api/index/createimg', 'api/Index/createImg');        // 创建图片 incLiulangcishu
@@ -99,3 +100,7 @@ Route::post('api/index/myfabu', 'api/Index/getMyfabu');                 // 我�
 Route::post('api/index/deletemyfabu', 'api/Index/deleteMyfabu');        // 删除我的发布  updateTime
 Route::post('api/index/updatetime', 'api/Index/updateTime');            // 刷新
 Route::post('api/index/getphone', 'api/Index/getPhone');                // 获取电话
+
+// 文章
+Route::post('api/index/wenzhanglist', 'api/Index/getWenzhangList');      // 获取文章列表
+Route::post('api/index/wenzhangdetail', 'api/Index/getWenzhangDetail');      // 获取文章列表

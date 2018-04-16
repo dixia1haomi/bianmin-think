@@ -2,15 +2,16 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2017/12/25 0025
- * Time: 上午 12:23
+ * Date: 2018/4/16 0016
+ * Time: 上午 10:58
  */
 
 namespace app\api\model;
 
+
 use think\Model;
 
-class Wenzhang extends Model
+class Wenzhanglist extends Model
 {
 
 }
