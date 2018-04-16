@@ -9,33 +9,37 @@
 namespace app\api\controller;
 
 
-use app\api\controller\Cos;
+
 use app\api\model\Bianminlist as bianminlistModel;
 use app\api\model\Img as imgModel;
 use app\api\model\User as userModel;
 use app\api\service\BaseToken;
 use app\api\service\userinfo\GetUserPhone;
-use app\exception\QueryDbException;
+
 use app\exception\Success;
 use app\api\controller\Cos as cosCon;
 
 class Index
 {
 
-    public function index()
-    {
-        return "aaaa";
-    }
-
 
     // 获取信息列表
-    public function getList()
+    public function getList($page = 1)
     {
+        // 接受分页参数
+//        $page = input('post.page');
         $model = new bianminlistModel();
-        $data = $model->with(['withUser', 'withImg'])->order('update_time desc')->select();
+        $data = $model->with(['withUser', 'withImg'])->order('update_time desc')->page($page,10)->select();
+
+        // 添加hid = false,用于客户端对应信息展开折叠
+        foreach ($data as $key => $value) {
+            $value['hid'] = false;
+            $value['time'] = format_date($value['update_time']);
+        }
 
         throw new Success(['data' => $data]);
     }
+
 
     // 创建信息
     public function createList()
@@ -69,7 +73,13 @@ class Index
         $uid = BaseToken::get_Token_Uid();
 
         $model = new bianminlistModel();
-        $res = $model->where('user_id', $uid)->with(['withUser','withImg'])->limit(2)->select();
+        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg'])->select();
+
+        // 添加hid = false,用于客户端对应信息展开折叠
+        foreach ($res as $key => $value) {
+            $value['hid'] = false;
+            $value['time'] = format_date($value['update_time']);
+        }
 
         throw new Success(['data' => $res]);
     }
@@ -94,6 +104,7 @@ class Index
         }
         throw new Success(['data' => $delete_bianmin_res]);
     }
+
 
     // 遍历删除COS图片和IMG表数据
     public function forDelete($imgArray)
@@ -145,12 +156,28 @@ class Index
     {
         $id = input('post.id');
         $model = new bianminlistModel();
-        $updatetime = $model->where(['id' => $id])->setField('update_time', time());
 
-        if ($updatetime === false) {
-            // 刷新更新时间失败了
+        // 限制刷新时间
+        // 获取数据库上次更新时间对比当前时间，大于24小时更新，否则返回提示
+        $updatetime = $model->where(['id' => $id])->field('update_time')->find();
+
+        $now_time = date("Y-m-d H:i:s", time());
+        $now_time = strtotime($now_time);                       // 当前时间
+        $show_time = strtotime($updatetime['update_time']);     // 数据库时间
+        $t = $show_time + 43200;                                // 数据库时间 + 12小时（可刷新时间）
+
+        // 当前时间大于可刷新时间就更新
+        if ($now_time > $t) {
+            $updatetime = $model->where(['id' => $id])->setField('update_time', time());
+            if ($updatetime === false) {
+                // 数据库问题刷新更新时间失败
+            }
+            throw new Success(['data' => '刷新成功']);
+        }else{
+            // 不到24小时，提示还有多长时间能刷新
+            $t = date('H:i',$t);
+            throw new Success(['data' => '这条信息需要'.$t.'以后才能刷新']);
         }
-        throw new Success(['data' => $updatetime]);
     }
 
 
@@ -164,13 +191,12 @@ class Index
         // 解密userphone
         $phone = (new GetUserPhone())->jiemi_UserPhone($encryptedData, $iv);
 
-//        return $phone;
         /**
          * $phone
          * countryCode:"86"                 区号
          * phoneNumber:"15987419288"        用户绑定的手机号（国外手机号会有区号）
          * purePhoneNumber:"15987419288"    没有区号的手机号
-        */
+         */
 
         // 把电话号码写入数据库
         $uid = BaseToken::get_Token_Uid();

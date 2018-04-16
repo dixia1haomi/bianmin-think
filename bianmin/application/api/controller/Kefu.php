@@ -20,17 +20,18 @@ class Kefu
 
     // 客服消息，上线后测试......
     // http://www.cnblogs.com/objects/p/7889088.html
+    // https://zhaopin.qujingdaishuyanxuan.org/api/kefu/getkefu
 
 
-    public function index()
-    {
-        return 'index';
-    }
-
-    public function qwe()
-    {
-        return 'qwe1';
-    }
+//    public function index()
+//    {
+//        return 'index';
+//    }
+//
+//    public function qwe()
+//    {
+//        return 'qwe1';
+//    }
 
     // 未成功，是不是要发布后才有效？待测试。
 

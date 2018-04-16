@@ -8,8 +8,8 @@
 
 return [
 
-    // 小程序微信获取openid配置信息
-    // 美食+
+    // 小程序微信获取openid配置信息 https://zhaopin.qujingdaishuyanxuan.org/api/kefu/getkefu
+    // 便民+
     'appid' => 'wx4b5c6d5c3c25c237',
     'secret' => 'dd486a1111c75cf91ed5beb1299d8df0',
 
@@ -19,13 +19,13 @@ return [
     'login_url' => 'https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code',
 
     //token过期时间
-    'token_expire' => 7200,
+    'token_expire' => 7100,
 
     //token->key的加密 盐
     'token_salt' => 'dixia2haomi',
 
     // 微信获取access_token的url地址
-//    'access_token_url' => "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s",
+    'access_token_url' => "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s",
 
 
     // 公众号-卡卷签名使用

@@ -76,6 +76,9 @@ use think\Route;
 //// 测试专用
 //Route::post('api/ceshi/index', 'api/ceshi/index');
 
+// 客服
+Route::get('api/kefu/getkefu', 'api/kefu/getKefu');             // 客服接口  gzh_accsee_token
+
 // Token
 Route::post('api/token/gettoken', 'api/token/getToken');   // 获取Token
 Route::post('api/token/verify', 'api/token/verifyToken');  // 检查Token是否有效

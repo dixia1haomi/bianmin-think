@@ -100,3 +100,28 @@ function fromArrayToModel($m , $array)
     }
     return $m;
 }
+
+
+// 接受Y-m-d H:i:s格式的日期时间转化成多少分钟小时前
+function format_date($the_time)
+{
+    $now_time = date("Y-m-d H:i:s", time());
+    $now_time = strtotime($now_time);
+    $show_time = strtotime($the_time);
+    $t = $now_time - $show_time;
+
+    $f = array(
+        '31536000' => '年',
+        '2592000' => '个月',
+        '604800' => '星期',
+        '86400' => '天',
+        '3600' => '小时',
+        '60' => '分钟',
+        '1' => '秒'
+    );
+    foreach ($f as $k => $v) {
+        if (0 != $c = floor($t / (int)$k)) {
+            return $c . $v . '前';
+        }
+    }
+}
