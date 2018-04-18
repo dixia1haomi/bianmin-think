@@ -9,7 +9,6 @@
 namespace app\api\controller;
 
 
-
 use app\api\model\Bianminlist as bianminlistModel;
 use app\api\model\Img as imgModel;
 use app\api\model\User as userModel;
@@ -21,6 +20,8 @@ use app\api\controller\Cos as cosCon;
 
 use app\api\model\Wenzhanglist as wenzhanglistModel;
 use app\api\model\Wenzhang as wenzhangModel;
+use app\api\model\Shangjia as shangjiaModel;
+use app\api\model\Shangjiaimg as shangjiaimgModel;
 
 class Index
 {
@@ -32,7 +33,7 @@ class Index
         // 接受分页参数
 //        $page = input('post.page');
         $model = new bianminlistModel();
-        $data = $model->with(['withUser', 'withImg'])->order('update_time desc')->page($page,10)->select();
+        $data = $model->with(['withUser', 'withImg'])->order('update_time desc')->page($page, 10)->select();
 
         // 添加hid = false,用于客户端对应信息展开折叠
         foreach ($data as $key => $value) {
@@ -176,10 +177,10 @@ class Index
                 // 数据库问题刷新更新时间失败
             }
             throw new Success(['data' => '刷新成功']);
-        }else{
+        } else {
             // 不到24小时，提示还有多长时间能刷新
-            $t = date('H:i',$t);
-            throw new Success(['data' => '这条信息需要'.$t.'以后才能刷新']);
+            $t = date('H:i', $t);
+            throw new Success(['data' => '这条信息需要' . $t . '以后才能刷新']);
         }
     }
 
@@ -213,20 +214,80 @@ class Index
         throw new Success(['data' => $phone["purePhoneNumber"]]);
     }
 
+
     // ----- 获取文章列表 -------
-    public function getWenzhangList(){
+    public function getWenzhangList()
+    {
         $model = new wenzhanglistModel();
         $wenzhanglist = $model->limit(10)->select();
 
         throw new Success(['data' => $wenzhanglist]);
     }
 
+
     // ----- 获取文章详情 -------
-    public function getWenzhangDetail($wenzhang_id){
+    public function getWenzhangDetail($wenzhang_id)
+    {
         $model = new wenzhangModel();
-        $wenzhangDetail = $model->where('wenzhang_id',$wenzhang_id)->find();
+        $wenzhangDetail = $model->where('wenzhang_id', $wenzhang_id)->find();
 
         throw new Success(['data' => $wenzhangDetail]);
     }
 
+
+    // 新增商家
+    public function createShangjia()
+    {
+        $params = input('post.');
+        $model = new shangjiaModel();
+        $res = $model->create($params);
+        if ($res === false) {
+            //
+        }
+        throw new Success(['data' => $res]);
+    }
+
+    // 创建商家图片
+    public function createShangjiaImg()
+    {
+        $params = input('post.');
+
+        $model = new shangjiaimgModel();
+        $res = $model->create($params);
+        if ($res === false) {
+            //
+        }
+        throw new Success(['data' => $res]);
+    }
+
+    // 查询商家详情
+    public function findShangjia($id)
+    {
+        $model = new shangjiaModel();
+
+        $data = $model->with(['withshangjiaImg'])->find($id);
+        if ($data === false) {
+            //
+        }
+        throw new Success(['data' => $data]);
+    }
+
+    // 查询商家详情
+    public function selectShangjia()
+    {
+        $model = new shangjiaModel();
+
+        $page = input('post.page');
+        // 如果传了page分页就不限制limit,limit限制用于首页展示10个商家，不想再分一个API了
+        if($page){
+            $data = $model->select();
+        }else{
+            $data = $model->limit(10)->select();
+        }
+
+        if ($data === false) {
+            //
+        }
+        throw new Success(['data' => $data]);
+    }
 }

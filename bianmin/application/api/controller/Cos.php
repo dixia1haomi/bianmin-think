@@ -38,14 +38,14 @@ class Cos
     }
 
     // 签名-单次
-    public function cosQianMingDanci()
+    public function cosQianMingDanci($cospath)
     {
         // post 灵活传入签名路径
 //        $filepath = input('post.filepath');
         $auth = new Auth($appId = '1253443226', $secretId = 'AKIDfDZjhT7PabTbZLuLZaP1ReeS8cu0AZZO', $secretKey = 'lKhsqcCZmqjQM3f5IK9oHYdVBf1B9nGX');
         $bucket = 'cosceshi';
-        $filepath = "/bianmin";
-        $sign = $auth->createNonreusableSignature($bucket, $filepath);
+//        $filepath = "/bianmin";
+        $sign = $auth->createNonreusableSignature($bucket, $cospath);
 
         throw new Success(['data' => $sign]);
     }
