@@ -117,31 +117,32 @@ class Index
             // 有图片，准备删除COS
             $cos = new cosCon();
             $fileName = trim(strrchr($imgArray[0]['url'], '/'), '/');   // 截取最后一个斜杠后面的内容
-            $cosdelete = $cos->cosdelete($fileName);
+            $wenjianjia = "bianmin/";
+            $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
 
-            if ($cosdelete['code'] == 0) {
-                // COS返回成功，继续删除IMG表
-                $imgModel = new imgModel();
-                $imgres = $imgModel->where('id', $imgArray[0]['id'])->delete();
-                if ($imgres === false) {
-                    return '出问题了';                  // * 抛给客户端并且记录日志
-                }
-
-                unset($imgArray[0]);                    // 删除$imgArray[0]
-                $imgArray = array_values($imgArray);    // 使用 unset 并未改变数组的原有索引。如果打算重排索引（让索引从0开始，并且连续），可以使用 array_values
-
-                // 循环调用自己
-                $this->forDelete($imgArray);
-            } else {
-                // 删除COS失败 // * 抛给客户端并且记录日志
+//            if ($cosdelete['code'] == 0) {
+            // COS返回成功，继续删除IMG表
+            $imgModel = new imgModel();
+            $imgres = $imgModel->where('id', $imgArray[0]['id'])->delete();
+            if ($imgres === false) {
+                return '出问题了';                  // * 抛给客户端并且记录日志
             }
+
+            unset($imgArray[0]);                    // 删除$imgArray[0]
+            $imgArray = array_values($imgArray);    // 使用 unset 并未改变数组的原有索引。如果打算重排索引（让索引从0开始，并且连续），可以使用 array_values
+
+            // 循环调用自己
+            $this->forDelete($imgArray);
+//            } else {
+//                // 删除COS失败 // * 抛给客户端并且记录日志
+//            }
         } else {
             // 没有图片，直接删除数据
             return true;
         }
     }
 
-    // 增加指定数据点击量
+    // 增加便民信息点击量
     public function incLiulangcishu()
     {
         $id = input('post.id');
@@ -216,29 +217,35 @@ class Index
 
 
     // ----- 获取文章列表 -------
-    public function getWenzhangList()
-    {
-        $model = new wenzhanglistModel();
-        $wenzhanglist = $model->limit(10)->select();
-
-        throw new Success(['data' => $wenzhanglist]);
-    }
+//    public function getWenzhangList()
+//    {
+//        $model = new wenzhanglistModel();
+//        $wenzhanglist = $model->limit(10)->select();
+//
+//        throw new Success(['data' => $wenzhanglist]);
+//    }
 
 
     // ----- 获取文章详情 -------
-    public function getWenzhangDetail($wenzhang_id)
-    {
-        $model = new wenzhangModel();
-        $wenzhangDetail = $model->where('wenzhang_id', $wenzhang_id)->find();
-
-        throw new Success(['data' => $wenzhangDetail]);
-    }
+//    public function getWenzhangDetail($wenzhang_id)
+//    {
+//        $model = new wenzhangModel();
+//        $wenzhangDetail = $model->where('wenzhang_id', $wenzhang_id)->find();
+//
+//        throw new Success(['data' => $wenzhangDetail]);
+//    }
 
 
     // 新增商家
     public function createShangjia()
     {
+        // 获取user_id
+        $uid = BaseToken::get_Token_Uid();
+        // 获取商家参数:name, toutu, phone, dizhi, longitude, latitude, miaoshu
         $params = input('post.');
+        // 加入用户ID
+        $params['user_id'] = $uid;
+
         $model = new shangjiaModel();
         $res = $model->create($params);
         if ($res === false) {
@@ -269,19 +276,26 @@ class Index
         if ($data === false) {
             //
         }
+
+        // 查询商家详情就增加点击量
+        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu');
+        if ($liulangcishu === false) {
+            // 增加流浪次数失败了
+        }
+
         throw new Success(['data' => $data]);
     }
 
-    // 查询商家详情
+    // 查询商家列表
     public function selectShangjia()
     {
         $model = new shangjiaModel();
 
         $page = input('post.page');
         // 如果传了page分页就不限制limit,limit限制用于首页展示10个商家，不想再分一个API了
-        if($page){
+        if ($page) {
             $data = $model->select();
-        }else{
+        } else {
             $data = $model->limit(10)->select();
         }
 
@@ -290,4 +304,80 @@ class Index
         }
         throw new Success(['data' => $data]);
     }
+
+    // 查询我的店铺
+    public function getMyShangjia()
+    {
+        $uid = BaseToken::get_Token_Uid();
+
+        $model = new shangjiaModel();
+        $res = $model->where('user_id', $uid)->with(['withshangjiaImg'])->find();
+
+        throw new Success(['data' => $res]);
+    }
+
+    // 删除我的店铺
+    public function deleteMyShangjia()
+    {
+        // 接受ID，删除COS详情图，删除COS头图，删除数据
+        $id = input('post.id');
+        // 根据商家ID查询商家图片表
+        $imgModel = new shangjiaimgModel();
+        $imgArray = $imgModel->where('shangjia_id', $id)->select();
+
+        // 删除COS详情图
+        $this->forDelete_ShangjiaCos($imgArray);
+
+        // 查询商家表
+        $shangjiaModel = new shangjiaModel();
+        $shangjia = $shangjiaModel->where('id', $id)->find();
+
+        // 删除COS头图
+        $cos = new cosCon();
+        $fileName = trim(strrchr($shangjia['toutu'], '/'), '/');   // 截取最后一个斜杠后面的内容
+        $wenjianjia = "shangjia/";
+        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+        if ($cosdelete['code'] == 0) {
+            // 删除头图成功
+        }
+
+        // 删除商家数据
+        $deleteShangjia = $shangjiaModel->where('id', $id)->delete();
+        if ($deleteShangjia === false) {
+            // 删除失败
+        }
+
+        throw new Success(['data' => $deleteShangjia]);
+    }
+
+    // 遍历删除商家COS图片和IMG表数据
+    public function forDelete_ShangjiaCos($imgArray)
+    {
+        if (count($imgArray) > 0) {
+            // 有图片，准备删除COS
+            $cos = new cosCon();
+            $fileName = trim(strrchr($imgArray[0]['url'], '/'), '/');   // 截取最后一个斜杠后面的内容
+            $wenjianjia = "shangjia/";
+            $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+
+            // COS返回成功，继续删除商家IMG表
+            $imgModel = new shangjiaimgModel();
+            $imgres = $imgModel->where('id', $imgArray[0]['id'])->delete();
+            if ($imgres === false) {
+                // 删除数据失败
+            }
+
+            unset($imgArray[0]);                    // 删除$imgArray[0]
+            $imgArray = array_values($imgArray);    // 使用 unset 并未改变数组的原有索引。如果打算重排索引（让索引从0开始，并且连续），可以使用 array_values
+
+            // 循环调用自己
+            $this->forDelete_ShangjiaCos($imgArray);
+
+        } else {
+            // 没有图片，直接删除数据
+            return true;
+        }
+    }
+
+
 }

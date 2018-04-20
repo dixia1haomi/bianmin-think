@@ -92,7 +92,7 @@ Route::post('api/cos/qianmingdanci', 'api/cos/cosQianMingDanci');   // COS签名
 // 列表
 Route::post('api/index/getlist', 'api/Index/getList');            // 获取列表
 Route::post('api/index/create', 'api/Index/createList');          // 创建信息
-Route::post('api/index/createimg', 'api/Index/createImg');        // 创建图片 incLiulangcishu
+Route::post('api/index/createimg', 'api/Index/createImg');        // 创建图片
 Route::post('api/index/incliulangcishu', 'api/Index/incLiulangcishu');  // 增加浏览次数
 
 // 我的
@@ -102,11 +102,13 @@ Route::post('api/index/updatetime', 'api/Index/updateTime');            // 刷�
 Route::post('api/index/getphone', 'api/Index/getPhone');                // 获取电话
 
 // 文章
-Route::post('api/index/wenzhanglist', 'api/Index/getWenzhangList');      // 获取文章列表
-Route::post('api/index/wenzhangdetail', 'api/Index/getWenzhangDetail');      // 获取文章列表
+//Route::post('api/index/wenzhanglist', 'api/Index/getWenzhangList');      // 获取文章列表
+//Route::post('api/index/wenzhangdetail', 'api/Index/getWenzhangDetail');      // 获取文章列表
 
 // 商家
 Route::post('api/index/createshangjia', 'api/Index/createShangjia');         // 新增商家
 Route::post('api/index/createshangjiaimg', 'api/Index/createShangjiaImg');   // 新增商家图片
 Route::post('api/index/findshangjia', 'api/Index/findShangjia');             // 查询商家详情
 Route::post('api/index/selectshangjia', 'api/Index/selectShangjia');         // 查询商家列表
+Route::post('api/index/myshangjia', 'api/Index/getMyShangjia');              // 我的店铺
+Route::post('api/index/deleteshangjia', 'api/Index/deleteMyShangjia');       // 删除店铺

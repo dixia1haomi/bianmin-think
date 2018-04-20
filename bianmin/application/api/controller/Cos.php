@@ -62,14 +62,12 @@ class Cos
 //    }
 
     // 实验删除(可用)
-    public function cosdelete($fileName)
+    public function cosdelete($wenjianjia,$fileName)
     {
         $cosApi = $this->config();//调用配置文件的内容
-//        $data = input('post.');
 
         $bucketName = "cosceshi";
-////        $path = $data["path"];
-        $path = "bianmin/".$fileName;
+        $path = $wenjianjia.$fileName;  // $wenjianjia = "bianmin/"
         $result = $cosApi->delFile($bucketName, $path);
         return $result;
     }
