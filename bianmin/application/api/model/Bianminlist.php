@@ -24,4 +24,10 @@ class Bianminlist extends Model
     {
         return $this->hasMany('img', 'list_id', 'id');
     }
+
+    // 关联->liuyan
+    public function withLiuyan()
+    {
+        return $this->hasMany('liuyan', 'bmxx_id', 'id')->with(['liuyanwithUser'])->with(['liuyanwithHuifu']);
+    }
 }

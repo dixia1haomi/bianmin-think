@@ -18,8 +18,6 @@ use app\api\service\userinfo\GetUserPhone;
 use app\exception\Success;
 use app\api\controller\Cos as cosCon;
 
-use app\api\model\Wenzhanglist as wenzhanglistModel;
-use app\api\model\Wenzhang as wenzhangModel;
 use app\api\model\Shangjia as shangjiaModel;
 use app\api\model\Shangjiaimg as shangjiaimgModel;
 
@@ -33,7 +31,7 @@ class Index
         // 接受分页参数
 //        $page = input('post.page');
         $model = new bianminlistModel();
-        $data = $model->with(['withUser', 'withImg'])->order('update_time desc')->page($page, 10)->select();
+        $data = $model->with(['withUser', 'withImg','withLiuyan'])->order('update_time desc')->page($page, 10)->select();
 
         // 添加hid = false,用于客户端对应信息展开折叠
         foreach ($data as $key => $value) {
@@ -42,6 +40,22 @@ class Index
         }
 
         throw new Success(['data' => $data]);
+    }
+
+    // 查询单个便民信息（接受信息ID，用于留言回复局部刷新）
+    public function findBianmin($id)
+    {
+        $bianminModel = new bianminlistModel();
+        $bianmin = $bianminModel->where('id', $id)->with(['withUser', 'withImg', 'withLiuyan'])->find();
+        if ($bianmin === false) {
+            //
+        }
+
+        // 添加hid = false,用于客户端对应信息展开折叠
+        $bianmin['hid'] = false;
+        $bianmin['time'] = format_date($bianmin['update_time']);
+
+        throw new Success(['data' => $bianmin]);
     }
 
 
@@ -77,7 +91,7 @@ class Index
         $uid = BaseToken::get_Token_Uid();
 
         $model = new bianminlistModel();
-        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg'])->select();
+        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg','withLiuyan'])->select();
 
         // 添加hid = false,用于客户端对应信息展开折叠
         foreach ($res as $key => $value) {
@@ -85,6 +99,21 @@ class Index
             $value['time'] = format_date($value['update_time']);
         }
 
+        throw new Success(['data' => $res]);
+    }
+
+    // 修改便民信息内容
+    public function edit_Bianmin_Neirong()
+    {
+        $id = input('post.id');
+        $neirong = input('post.neirong');
+
+        $model = new bianminlistModel();
+        $res = $model->where('id', $id)->setField('neirong', $neirong);
+
+        if ($res === false) {
+            // 失败了
+        }
         throw new Success(['data' => $res]);
     }
 
@@ -169,7 +198,7 @@ class Index
         $now_time = date("Y-m-d H:i:s", time());
         $now_time = strtotime($now_time);                       // 当前时间
         $show_time = strtotime($updatetime['update_time']);     // 数据库时间
-        $t = $show_time + 43200;                                // 数据库时间 + 12小时（可刷新时间）
+        $t = $show_time + 21600;                                // 数据库时间 + 12小时（可刷新时间）
 
         // 当前时间大于可刷新时间就更新
         if ($now_time > $t) {
@@ -216,25 +245,8 @@ class Index
     }
 
 
-    // ----- 获取文章列表 -------
-//    public function getWenzhangList()
-//    {
-//        $model = new wenzhanglistModel();
-//        $wenzhanglist = $model->limit(10)->select();
-//
-//        throw new Success(['data' => $wenzhanglist]);
-//    }
-
-
-    // ----- 获取文章详情 -------
-//    public function getWenzhangDetail($wenzhang_id)
-//    {
-//        $model = new wenzhangModel();
-//        $wenzhangDetail = $model->where('wenzhang_id', $wenzhang_id)->find();
-//
-//        throw new Success(['data' => $wenzhangDetail]);
-//    }
-
+    // ---------------------------------------------------------- 商家 ---------------------------------------------------
+    // ---------------------------------------------------------- 商家 ---------------------------------------------------
 
     // 新增商家
     public function createShangjia()
@@ -314,6 +326,106 @@ class Index
         $res = $model->where('user_id', $uid)->with(['withshangjiaImg'])->find();
 
         throw new Success(['data' => $res]);
+    }
+
+    // ------------------ 修改店铺 -----------------
+    // ------------------ 修改店铺 -----------------
+
+    // 删除一张店铺详情图
+    public function deleteMyShangjia_xiangqingtu_item()
+    {
+        $id = input('post.id');
+        $url = input('post.url');
+
+        // 准备删除COS
+        $cos = new cosCon();
+        $fileName = trim(strrchr($url, '/'), '/');   // 截取最后一个斜杠后面的内容
+        $wenjianjia = "shangjia/";
+        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+        if ($cosdelete['code'] != 0) {
+            // COS有问题
+        }
+
+        // 删除shangjiaimg表数据
+        $shangjiaimgModel = new shangjiaimgModel();
+        $delete = $shangjiaimgModel->where('id', $id)->delete();
+        if ($delete === false) {
+            //
+        }
+
+        throw new Success(['data' => $delete]);
+    }
+
+    // 修改商家头图
+    public function xiugaiMyShangjia_toutu()
+    {
+        $shangjia_id = input('post.shangjia_id');   // 商家ID
+        $url = input('post.url');                   // 上传的新图url
+        $jiu_toutu = input('post.jiu_toutu');       // 旧图url
+
+        // 更新商家表头图url
+        $model = new shangjiaModel();
+        $res = $model->where('id', $shangjia_id)->setField('toutu', $url);
+        if ($res === false) {
+            //
+        }
+
+        // 删除COS旧图
+        $cos = new cosCon();
+        $fileName = trim(strrchr($jiu_toutu, '/'), '/');   // 截取最后一个斜杠后面的内容
+        $wenjianjia = "shangjia/";
+        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+        if ($cosdelete['code'] != 0) {
+            // COS有问题
+        }
+        throw new Success(['data' => $res]);
+    }
+
+    // 修改商家名称
+    public function xiugaiMyShangjia_name()
+    {
+        $shangjia_id = input('post.shangjia_id');   // 商家ID
+        $name = input('post.name');                 // 新名称
+
+        // 更新商家表头图url
+        $model = new shangjiaModel();
+        $update_name = $model->where('id', $shangjia_id)->setField('name', $name);
+        if ($update_name === false) {
+            //
+        }
+        throw new Success(['data' => $update_name]);
+    }
+
+    // 修改商家描述
+    public function xiugaiMyShangjia_miaoshu()
+    {
+        $shangjia_id = input('post.shangjia_id');   // 商家ID
+        $miaoshu = input('post.miaoshu');                 // 新名称
+
+        // 更新商家表头图url
+        $model = new shangjiaModel();
+        $update_miaoshu = $model->where('id', $shangjia_id)->setField('miaoshu', $miaoshu);
+        if ($update_miaoshu === false) {
+            //
+        }
+        throw new Success(['data' => $update_miaoshu]);
+    }
+
+    // 修改商家地址
+    public function xiugaiMyShangjia_dizhi()
+    {
+        $shangjia_id = input('post.shangjia_id');   // 商家ID
+        $dizhi = input('post.dizhi');               // 新地址
+        $longitude = input('post.longitude');       // 新经度
+        $latitude = input('post.latitude');         // 新纬度
+
+        // 更新商家地址,经度，纬度
+        $model = new shangjiaModel();
+        $update_dizhi = $model->where('id', $shangjia_id)->update(['dizhi' => $dizhi, 'longitude' => $longitude, 'latitude' => $latitude]);
+        if ($update_dizhi === false) {
+            //
+        }
+        throw new Success(['data' => $update_dizhi]);
     }
 
     // 删除我的店铺

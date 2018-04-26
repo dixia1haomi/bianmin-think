@@ -11,6 +11,7 @@ namespace app\api\service\userinfo;
 
 use app\api\model\User;
 use app\api\service\BaseWeChat;
+use app\exception\Success;
 use app\exception\WeChatException;
 use think\Exception;
 
@@ -38,7 +39,10 @@ class GetUserInfo
             return json_decode($data, true);
         } else {
             // 异常
-            throw new WeChatException(['msg' => '解密userinfo失败，service/userinfo/GetUserInfo/jiemi_UserInfo']);
+            throw new WeChatException([
+                'msg' => '解密userinfo失败，service/userinfo/GetUserInfo/jiemi_UserInfo',
+                'data' => $errCode
+            ]);
         }
     }
 

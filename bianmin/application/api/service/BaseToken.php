@@ -24,13 +24,11 @@ class BaseToken
     //准备令牌的value，
     //接受微信返回的数据和数据库返回的用户id
     //返回字符串,(原本是数组，但是框架的缓存只接受字符串value,所以json_encode)
-    public static function prepare_Token_Value($openid, $uid,$sessionKey)
+    public static function prepare_Token_Value($wxResult, $uid)
     {
-        $tokenValue = [];
-        $tokenValue['openid'] = $openid;
+        $tokenValue = $wxResult;
         $tokenValue['uid'] = $uid;
         $tokenValue['scope'] = 16;
-        $tokenValue['session_key'] = $sessionKey;
         return json_encode($tokenValue);
     }
 
@@ -48,18 +46,6 @@ class BaseToken
         return md5($rand_str.$time.$token_salt);
     }
 
-    // 生成token，缓存并返回
-    public static function save_Cache_Token($openid,$uid,$sessionKey){
-        $tokenKey = BaseToken::prepare_Token_Key();                          //获取token_key
-        $tokenValue = BaseToken::prepare_Token_Value($openid,$uid,$sessionKey);          //获取token_value
-        $token_expire = config('wx_config.token_expire');                    //获取token过期时间
-
-        $token = cache($tokenKey,$tokenValue,$token_expire);    //缓存token
-        if(!$token){
-            throw new TokenException(['msg' => '缓存token时异常，来自save_Cache_Token']);
-        }
-        return $tokenKey;
-    }
 
 
 
@@ -72,7 +58,7 @@ class BaseToken
         if($scope == Enum::Super){               // 只有Super权限才可以自己传入uid,且必须在get参数中，post不接受任何uid字段
             $id = input('get.id');
             if(!$id){
-                throw new CheckParamException(['msg' => '没有指定要操作的对象','code'=>401]);
+                throw new CheckParamException(['msg' => '没有指定要操作的对象']);
             }
             return $id;
         }else{
@@ -120,10 +106,10 @@ class BaseToken
                 return true;
             }
             else{
-                throw new TokenException(['msg'=>'需要管理员权限']);
+                throw new Exception(['msg'=>'需要管理员权限']);
             }
         } else {
-            throw new TokenException(['msg'=>'获取scope失败，BaseToken/checkScope']);
+            throw new Exception(['msg'=>'获取scope失败，BaseToken/checkScope']);
         }
     }
 

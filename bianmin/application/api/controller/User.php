@@ -18,6 +18,29 @@ use app\exception\Success;
 class User
 {
 
+    /**
+     * API
+     * 保存用户信息
+     */
+    public function saveUserInfo($info)
+    {
+        $uid = BaseToken::get_Token_Uid();
+        $userModel = new userModel();
+        $res = $userModel->where('id', $uid)->update([
+            'nick_name' => $info['nickName'],
+            'avatar_url' => $info['avatarUrl'],
+            'city' => $info['city'],
+            'gender' => $info['gender'],
+            'province' => $info['province']
+        ]);
+        if ($res === false) {
+            //
+        }
+        throw new Success(['data' => $uid]);
+    }
+
+
+
     // 根据uid检查userinfo表中是否有用户信息,(有：返回errorCode = 0和查到的用户信息,没有：返回errorCode=1)（app.js初始化时调用）
 //    public function uidCheckInfo(){
 //
@@ -37,15 +60,14 @@ class User
 //    }
 
 
-
     // 查询我的留言（根据uid-客户端我的页-我的留言）(关联餐厅名)（排序-根据创建时间，分页-20条）
-    public function getMyLiuyan(){
-        $uid = BaseToken::get_Token_Uid();
-        $post_page = input('post.page');
-
-        // 根据uid查所有留言
-        Liuyan::getMyLiuyan_Model($uid,$post_page);
-    }
+//    public function getMyLiuyan(){
+//        $uid = BaseToken::get_Token_Uid();
+//        $post_page = input('post.page');
+//
+//        // 根据uid查所有留言
+//        Liuyan::getMyLiuyan_Model($uid,$post_page);
+//    }
 
     // 查询我的话题（根据uid-客户端我的页-我的话题）(关联话题名)（排序-根据创建时间，分页-20条）
 //    public function getMyHuati(){

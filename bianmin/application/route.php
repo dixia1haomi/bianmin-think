@@ -89,11 +89,16 @@ Route::post('api/cos/qianmingdanci', 'api/cos/cosQianMingDanci');   // COS签名
 //Route::post('api/cos/qianmingduoci', 'api/cos/cosQianMingDuoci');   // COS签名-多次
 //Route::post('api/cos/delete', 'api/cos/cosdelete');                 // 删除
 
+// 登陆
+Route::post('api/user/saveuserinfo', 'api/User/saveUserInfo');
+
 // 列表
-Route::post('api/index/getlist', 'api/Index/getList');            // 获取列表
-Route::post('api/index/create', 'api/Index/createList');          // 创建信息
-Route::post('api/index/createimg', 'api/Index/createImg');        // 创建图片
-Route::post('api/index/incliulangcishu', 'api/Index/incLiulangcishu');  // 增加浏览次数
+Route::post('api/index/getlist', 'api/Index/getList');                       // 获取列表
+Route::post('api/index/findbianmin', 'api/Index/findBianmin');               // 查询单个便民信息
+Route::post('api/index/create', 'api/Index/createList');                     // 创建信息
+Route::post('api/index/createimg', 'api/Index/createImg');                   // 创建图片
+Route::post('api/index/incliulangcishu', 'api/Index/incLiulangcishu');       // 增加浏览次数
+Route::post('api/index/xiugaineirong', 'api/Index/edit_Bianmin_Neirong');    // 修改便民信息内容
 
 // 我的
 Route::post('api/index/myfabu', 'api/Index/getMyfabu');                 // 我的发布
@@ -106,9 +111,20 @@ Route::post('api/index/getphone', 'api/Index/getPhone');                // 获�
 //Route::post('api/index/wenzhangdetail', 'api/Index/getWenzhangDetail');      // 获取文章列表
 
 // 商家
-Route::post('api/index/createshangjia', 'api/Index/createShangjia');         // 新增商家
-Route::post('api/index/createshangjiaimg', 'api/Index/createShangjiaImg');   // 新增商家图片
-Route::post('api/index/findshangjia', 'api/Index/findShangjia');             // 查询商家详情
-Route::post('api/index/selectshangjia', 'api/Index/selectShangjia');         // 查询商家列表
-Route::post('api/index/myshangjia', 'api/Index/getMyShangjia');              // 我的店铺
-Route::post('api/index/deleteshangjia', 'api/Index/deleteMyShangjia');       // 删除店铺
+Route::post('api/index/createshangjia', 'api/Index/createShangjia');                         // 新增商家
+Route::post('api/index/createshangjiaimg', 'api/Index/createShangjiaImg');                   // 新增商家图片
+Route::post('api/index/findshangjia', 'api/Index/findShangjia');                             // 查询商家详情
+Route::post('api/index/selectshangjia', 'api/Index/selectShangjia');                         // 查询商家列表
+Route::post('api/index/myshangjia', 'api/Index/getMyShangjia');                              // 我的店铺
+Route::post('api/index/deleteshangjia', 'api/Index/deleteMyShangjia');                       // 删除店铺
+Route::post('api/index/deleteshangjiaimg', 'api/Index/deleteMyShangjia_xiangqingtu_item');   // 删除商家详情图（每次1张）
+Route::post('api/index/xiugaishangjiatoutu', 'api/Index/xiugaiMyShangjia_toutu');            // 修改商家头图
+Route::post('api/index/xiugaishangjianame', 'api/Index/xiugaiMyShangjia_name');              // 修改商家名称
+Route::post('api/index/xiugaishangjiamiaoshu', 'api/Index/xiugaiMyShangjia_miaoshu');        // 修改商家描述
+Route::post('api/index/xiugaishangjiadizhi', 'api/Index/xiugaiMyShangjia_dizhi');            // 修改商家地址
+
+// 留言
+Route::post('api/liuyan/createbianminliuyan', 'api/Liuyan/create_Bianmin_Liuyan');           // 新增便民信息留言
+Route::post('api/liuyan/createbianminliuyanhuifu', 'api/Liuyan/create_Bianmin_Liuyan_Huifu');// 新增便民信息留言回复
+//Route::post('api/liuyan/selectmyliuyan', 'api/Liuyan/selectMyLiuyan');
+Route::post('api/liuyan/huifuwode', 'api/Liuyan/huifuWode');

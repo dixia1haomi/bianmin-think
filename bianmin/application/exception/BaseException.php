@@ -44,7 +44,7 @@ class BaseException extends Exception
             $this->errorCode = $params['errorCode'];
         }
 
-//        //如果传进来的数组中有code，就覆盖code
+        //如果传进来的数组中有code，就覆盖code
         if(array_key_exists('data',$params)){
             $this->data = $params['data'];
         }
