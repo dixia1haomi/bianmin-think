@@ -13,6 +13,7 @@ use app\api\model\Bianminlist as bianminlistModel;
 use app\api\model\Img as imgModel;
 use app\api\model\User as userModel;
 use app\api\service\BaseToken;
+use app\api\service\mobanxiaoxi\LiuyanMoban;
 use app\api\service\userinfo\GetUserPhone;
 
 use app\exception\Success;
@@ -31,7 +32,7 @@ class Index
         // 接受分页参数
 //        $page = input('post.page');
         $model = new bianminlistModel();
-        $data = $model->with(['withUser', 'withImg','withLiuyan'])->order('update_time desc')->page($page, 10)->select();
+        $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order('update_time desc')->page($page, 10)->select();
 
         // 添加hid = false,用于客户端对应信息展开折叠
         foreach ($data as $key => $value) {
@@ -59,7 +60,7 @@ class Index
     }
 
 
-    // 创建信息
+    // 创建便民信息
     public function createList()
     {
         $params = input('post.');
@@ -91,7 +92,7 @@ class Index
         $uid = BaseToken::get_Token_Uid();
 
         $model = new bianminlistModel();
-        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg','withLiuyan'])->select();
+        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg', 'withLiuyan'])->select();
 
         // 添加hid = false,用于客户端对应信息展开折叠
         foreach ($res as $key => $value) {
@@ -198,7 +199,7 @@ class Index
         $now_time = date("Y-m-d H:i:s", time());
         $now_time = strtotime($now_time);                       // 当前时间
         $show_time = strtotime($updatetime['update_time']);     // 数据库时间
-        $t = $show_time + 21600;                                // 数据库时间 + 12小时（可刷新时间）
+        $t = $show_time + 21600;                                // 数据库时间 + 6小时（可刷新时间）
 
         // 当前时间大于可刷新时间就更新
         if ($now_time > $t) {

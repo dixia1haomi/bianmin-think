@@ -25,14 +25,8 @@ class User
     public function saveUserInfo($info)
     {
         $uid = BaseToken::get_Token_Uid();
-        $userModel = new userModel();
-        $res = $userModel->where('id', $uid)->update([
-            'nick_name' => $info['nickName'],
-            'avatar_url' => $info['avatarUrl'],
-            'city' => $info['city'],
-            'gender' => $info['gender'],
-            'province' => $info['province']
-        ]);
+
+        $res = userModel::saveUserinfoModel($info,$uid);
         if ($res === false) {
             //
         }

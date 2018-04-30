@@ -51,7 +51,7 @@ class UserToken
                 ]);
             } else {
                 // 返回客户端缓存后的token的key
-               return $this->grantToken($wxResult);
+                return $this->grantToken($wxResult);
 //                throw new Success(['data' => $this->grantToken($wxResult)]);
             }
         }
@@ -89,7 +89,43 @@ class UserToken
         if (!$token) {
             throw new TokenException(['msg' => '缓存token时异常，来自save_Cache_Token']);
         }
-        return $tokenKey;
+
+        // 检查并返回登录态(2018/04/30添加的登陆态检查)
+        $loginState = $this->checkformId($uid);
+
+        return ['token_key' => $tokenKey, 'loginstate' => $loginState];
+    }
+
+    // 2018/04/30添加的登陆态检查
+    // 如果有form_id且没有过期返回登陆态正常，用户不需要重复登陆（formID是登陆的时候和userinfo一起写入用户表的，登陆频率取决于form_id失效频率）
+    // 检查并返回登录态
+    private function checkformId($uid)
+    {
+        $userModel = new UserModel();
+        $user = $userModel->where('id', $uid)->find();
+        if ($user === false) {
+            //
+        }
+
+        // 检查formID
+        if (empty($user['form_id'])) {
+            // form_id为空，设置登陆态为false
+            $loginState = false;
+        } else {
+            // 有form_id，检查是否过期
+            $dt = time();           // 当前时间
+            $update_time = strtotime($user['update_time']);
+            $ShiJianCha = $dt - $update_time;
+
+            if ($ShiJianCha > 604800) {
+                // 大于7天过期，设置登陆态为false
+                $loginState = false;
+            } else {
+                // form_id有效，设置登陆态为true
+                $loginState = true;
+            }
+        }
+        return $loginState;
     }
 
 }

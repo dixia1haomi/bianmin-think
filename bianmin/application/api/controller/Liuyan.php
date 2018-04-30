@@ -8,10 +8,13 @@
 
 namespace app\api\controller;
 
+use app\api\model\Bianminlist;
 use app\api\model\Liuyan as liuyanModel;
 use app\api\model\Huifu as huifuModel;
 use app\api\model\Bianminlist as bianminlistModel;
 use app\api\service\BaseToken;
+use app\api\service\mobanxiaoxi\HuifuMoban;
+use app\api\service\mobanxiaoxi\LiuyanMoban;
 use app\exception\Success;
 
 
@@ -25,23 +28,35 @@ class Liuyan
 
         $bmxx_id = input('post.bmxx_id');
         $neirong = input('post.neirong');
+        $form_id = input('post.form_id');
 
         $model = new liuyanModel();
-        // 新增便民数据
-        $res = $model->create([
+        // 新增便民留言数据
+        $lyxx = $model->create([
             'bmxx_id' => $bmxx_id,
             'neirong' => $neirong,
-            'user_id' => $uid
+            'user_id' => $uid,
+            'form_id' => $form_id
         ]);
-        if ($res === false) {
-            //
+        if ($lyxx === false) {
+            // res =
+            // bmxx_id:"86"
+            // id:"2"
+            // neirong:"qwe"
+            // user_id:2
         }
 
         // 查询新信息返回客户端（局部刷新）
-        $bianmin = $this->findBianminXinxi($bmxx_id);
+        $bmxx = $this->findBianminXinxi($bmxx_id);
 
-        throw new Success(['data' => $bianmin]);
+        // 发送留言模板消息给信息主人(留言数据,便民数据)
+        $message = new LiuyanMoban();
+        $bmMsg = $message->sendLiuyanMessage($lyxx,$bmxx);
+
+        throw new Success(['data' => $bmxx, 'msg' => $bmMsg]);
     }
+
+
 
     // ------------------------------------------------- 回复留言 -------------------------------------------
 
@@ -56,26 +71,30 @@ class Liuyan
         $bmxx_id = input('post.bmxx_id');
 
         // 防止自己回复自己（不要改动！！前段是判断str == 不要自己回复自己）
-        if ($uid == $huifu_user_id) {
-            throw new Success(['data' => '不要自己回复自己']);
-        }
+//        if ($uid == $huifu_user_id) {
+//            throw new Success(['data' => '不要自己回复自己']);
+//        }
 
         // 新增回复
         $model = new huifuModel();
-        $res = $model->create([
+        $hfxx = $model->create([
             'liuyan_id' => $liuyan_id,
             'user_id' => $uid,
             'huifu_user_id' => $huifu_user_id,
             'neirong' => $neirong,
         ]);
-        if ($res === false) {
+        if ($hfxx === false) {
             //
         }
 
         // 查询新信息返回客户端（局部刷新）
-        $bianmin = $this->findBianminXinxi($bmxx_id);
+        $bmxx = $this->findBianminXinxi($bmxx_id);
 
-        throw new Success(['data' => $bianmin]);
+        // 发送回复模板消息给留言人(留言数据,便民数据)
+        $message = new HuifuMoban();
+        $bmMsg = $message->sendHuifuMessage($hfxx);
+
+        throw new Success(['data' => $bmxx, 'msg' => $bmMsg]);
     }
 
 
@@ -113,16 +132,21 @@ class Liuyan
     }
 
     // 回复我的
-    public function huifuWode(){
+    public function huifuWode()
+    {
         $uid = BaseToken::get_Token_Uid();
 
         $huifuModel = new huifuModel();
-        $res = $huifuModel->where('huifu_user_id', $uid)->with(['huifuwithHfuser','huifuwithBhfuser','huifuwithLiuyan'])->select();
+        $res = $huifuModel->where('huifu_user_id', $uid)->with(['huifuwithHfuser', 'huifuwithBhfuser', 'huifuwithLiuyan'])->select();
         if ($res === false) {
             //
         }
         throw new Success(['data' => $res]);
     }
+
+
+
+
 
     // ------------------ 以前美食的 -------------------------
 //    // 根据餐厅ID查询留言列表（客户端餐厅详情页-查看全部留言）

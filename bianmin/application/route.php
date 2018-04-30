@@ -128,3 +128,4 @@ Route::post('api/liuyan/createbianminliuyan', 'api/Liuyan/create_Bianmin_Liuyan'
 Route::post('api/liuyan/createbianminliuyanhuifu', 'api/Liuyan/create_Bianmin_Liuyan_Huifu');// 新增便民信息留言回复
 //Route::post('api/liuyan/selectmyliuyan', 'api/Liuyan/selectMyLiuyan');
 Route::post('api/liuyan/huifuwode', 'api/Liuyan/huifuWode');
+Route::post('api/liuyan/xiaoxiapi', 'api/Liuyan/xiaoxiApi');                                  // 测试模板消息
