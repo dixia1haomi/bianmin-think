@@ -8,8 +8,10 @@
 
 namespace app\api\service\mobanxiaoxi;
 
+use app\api\model\Liuyan;
 use app\api\model\User as userModel;
 use app\api\model\Liuyan as liuyanModel;
+
 class HuifuMoban extends MobanXiaoxi
 {
 
@@ -23,34 +25,44 @@ class HuifuMoban extends MobanXiaoxi
 
     public function sendHuifuMessage($hfxx)
     {
+        // 查询留言表，获得留言表中的便民信息ID、内容、form_id
+        $liuyan = $this->findLiuyan($hfxx['liuyan_id']);
         // 检查from_id是否还在有效期内
-        $user = $this->checkFormID($hfxx->huifu_user_id);
-        if($user !== false){
+        $checkformId = $this->checkFormID($liuyan);
+
+        if($checkformId === true){
+            // 获得openid
+            $openid = $this->getOpenID($hfxx->huifu_user_id);
+
             $this->tplID = self::MOBANXIAOXI_ID;                                    // 模板消息ID
-            $this->formID = $user->form_id;                                         // 信息表formID
-            $this->page = '/pages/index/index1';                                    // 进入路径
-            $this->createMessageData($hfxx);                                             // 创建模板消息的data数组
-//        $this->emphasisKeyWord = 'keyword2.DATA';                             // 放大字体
-            $msg = parent::sendMessage($user->openid);       // 条送发送模板消息携带openid
+            $this->formID = $liuyan->form_id;                                         // 信息表formID
+            $this->page = '/pages/bmxx/detail?id=' . $liuyan->bmxx_id;   // 进入路径
+            $this->createMessageData($hfxx, $liuyan->neirong);                                             // 创建模板消息的data数组
+            $msgres = parent::sendMessage($openid);       // 条送发送模板消息携带openid
+
+            if ($msgres['errcode'] == 0) {
+                $msg = '模板消息发送成功';
+            } else {
+                $msg = '模板消息发送失败,' . $msgres['errmsg'];
+            }
         }else{
-            $msg = 'formID过期';
+            $msg = $checkformId;
         }
+
         return $msg;
     }
 
-    private function createMessageData($hfxx)
+    private function createMessageData($hfxx, $liuYanNeiRong)
     {
         // 当前时间
         $dt = new \DateTime();
-        // 留言内容
-        $liuyan_neirong = $this->liuyanNeirong($hfxx['liuyan_id']);
         // 留言人昵称
         $name = $this->getHuifuUserName($hfxx['user_id']);
 
         $data = [
             // 留言内容
             'keyword1' => [
-                'value' => $liuyan_neirong,
+                'value' => $liuYanNeiRong,
             ],
             // 回复者
             'keyword2' => [
@@ -71,36 +83,48 @@ class HuifuMoban extends MobanXiaoxi
     }
 
     // 留言内容
-    private function liuyanNeirong($liuyan_id){
+    private function findLiuyan($liuyan_id)
+    {
         $liuyanModel = new liuyanModel();
-        $liuyan = $liuyanModel->where('id',$liuyan_id)->find();
-        if($liuyan === false){
+        $liuyan = $liuyanModel->where('id', $liuyan_id)->find();
+        if ($liuyan === false) {
             //
         }
-        return $liuyan->neirong;
+        return $liuyan;
     }
 
     // 根据id查询user表并检查form_id是否有效
-    private function checkFormID($uid)
+    private function checkFormID($liuyan)
     {
+        // 检查是否有form_id
+        if (empty($liuyan->form_id)) {
+            // form_id为空
+            return 'form_id为空';
+        } else {
+            // 检查form_id是否有效
+            $dt = time();           // 当前时间
+            $update_time = strtotime($liuyan['update_time']);
+            $ShiJianCha = $dt - $update_time;
+
+            // 大于7天过期
+            if ($ShiJianCha > 604800) {
+                return 'form_id已过期';
+            } else {
+                return true;
+            }
+        }
+    }
+
+    // 获得openid
+    private function getOpenID($huifu_user_id)
+    {
+        // 先获得user表数据
         $userModel = new userModel();
-        $user = $userModel->find($uid);
+        $user = $userModel->find($huifu_user_id);
         if ($user === false) {
             //
         }
-
-        // 检查form_id是否有效
-        // 当前时间
-        $dt = time();
-        $update_time = strtotime($user['update_time']);
-        $ShiJianCha = $dt - $update_time;
-
-        // 7天
-        if ($ShiJianCha < 604800) {
-            return $user;
-        } else {
-            return false;
-        }
+        return $user->openid;
     }
 
 
@@ -113,4 +137,13 @@ class HuifuMoban extends MobanXiaoxi
         }
         return $fhuser->nick_name;
     }
+
+//    private function getBianMinXinXi_Id($liuyanId){
+//        $liuyanModel = new liuyanModel();
+//        $liuyan = $liuyanModel->where('id',$liuyanId)->find();
+//        if($liuyan === false){
+//            //
+//        }
+//        return $liuyan->bmxx_id;
+//    }
 }

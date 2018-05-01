@@ -10,6 +10,7 @@ namespace app\api\service\mobanxiaoxi;
 
 
 use app\api\model\User as userModel;
+use app\api\model\Bianminlist as bianminlistModel;
 
 class LiuyanMoban extends MobanXiaoxi
 {
@@ -25,26 +26,29 @@ class LiuyanMoban extends MobanXiaoxi
 
     public function sendLiuyanMessage($lyxx, $bmxx)
     {
-        // 检查from_id是否还在有效期内
-        $user = $this->checkFormID($bmxx->user_id);
+        // 检查便民信息里的from_id是否还在有效期内
+         $checkformId = $this->checkFormID($bmxx);
 
-        if ($user !== false) {
+        if($checkformId === true){
+            // 获得openid
+            $openid = $this->getOpenID($bmxx->user_id);
+
             $this->tplID = self::MOBANXIAOXI_ID;                                    // 模板消息ID
-            $this->formID = $user->form_id;                                         // 信息表formID
-            $this->page = '/pages/index/index1';                                    // 进入路径
+            $this->formID = $bmxx->form_id;                                         // 信息表formID
+            $this->page = '/pages/wode/myfabu';                                    // 进入路径
             $this->createMessageData($lyxx);                                             // 创建模板消息的data数组
-            $msgres = parent::sendMessage($user->openid);       // 条送发送模板消息携带openid
+            $msgres = parent::sendMessage($openid);       // 条送发送模板消息携带openid
 
             if ($msgres['errcode'] == 0) {
-                // 模板消息发送成功，清空user下的form_id
-                $this->deleteFormID($user->id);
+                $this->deleteFormID($bmxx->id);
                 $msg = '模板消息发送成功';
             } else {
                 $msg = '模板消息发送失败,' . $msgres['errmsg'];
             }
-        } else {
-            $msg = '没有formID或者已过期';
+        }else{
+            $msg = $checkformId;
         }
+
         return $msg;
     }
 
@@ -73,31 +77,36 @@ class LiuyanMoban extends MobanXiaoxi
         $this->data = $data;
     }
 
-    // 根据id查询user表并检查form_id是否有效
-    private function checkFormID($bmxxuserid)
+    // 获得openid
+    private function getOpenID($huifu_user_id)
     {
         // 先获得user表数据
         $userModel = new userModel();
-        $user = $userModel->find($bmxxuserid);
+        $user = $userModel->find($huifu_user_id);
         if ($user === false) {
             //
         }
+        return $user->openid;
+    }
 
-        // 检查user表是否有form_id
-        if (empty($user['form_id'])) {
+    // 根据id查询user表并检查form_id是否有效
+    private function checkFormID($bmxx)
+    {
+        // 检查是否有form_id
+        if (empty($bmxx->form_id)) {
             // form_id为空
-            return false;
+            return 'form_id为空';
         } else {
             // 检查form_id是否有效
             $dt = time();           // 当前时间
-            $update_time = strtotime($user['update_time']);
+            $update_time = strtotime($bmxx['update_time']);
             $ShiJianCha = $dt - $update_time;
 
             // 大于7天过期
             if ($ShiJianCha > 604800) {
-                return false;
+                return 'form_id已过期';
             } else {
-                return $user;
+                return true;
             }
         }
     }
@@ -113,12 +122,12 @@ class LiuyanMoban extends MobanXiaoxi
         return $lyuser->nick_name;
     }
 
-    // 清空user下的form_id
-    private function deleteFormID($uid)
+    // 清空便民信息下的form_id
+    private function deleteFormID($id)
     {
-        $userModel = new userModel();
-        $user = $userModel->where('id',$uid)->setField('form_id','');
-        if ($user === false) {
+        $bianminModel = new bianminlistModel();
+        $bianmin = $bianminModel->where('id', $id)->setField('form_id', '');
+        if ($bianmin === false) {
             //
         }
         return true;

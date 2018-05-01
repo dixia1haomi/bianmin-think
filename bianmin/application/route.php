@@ -125,7 +125,8 @@ Route::post('api/index/xiugaishangjiadizhi', 'api/Index/xiugaiMyShangjia_dizhi')
 
 // 留言
 Route::post('api/liuyan/createbianminliuyan', 'api/Liuyan/create_Bianmin_Liuyan');           // 新增便民信息留言
-Route::post('api/liuyan/createbianminliuyanhuifu', 'api/Liuyan/create_Bianmin_Liuyan_Huifu');// 新增便民信息留言回复
+Route::post('api/liuyan/createbianminhuifu', 'api/Liuyan/create_Bianmin_Huifu');             // 新增便民信息留言回复
 //Route::post('api/liuyan/selectmyliuyan', 'api/Liuyan/selectMyLiuyan');
-Route::post('api/liuyan/huifuwode', 'api/Liuyan/huifuWode');
-Route::post('api/liuyan/xiaoxiapi', 'api/Liuyan/xiaoxiApi');                                  // 测试模板消息
+//Route::post('api/liuyan/huifuwode', 'api/Liuyan/huifuWode');
+//Route::post('api/liuyan/xiaoxiapi', 'api/Liuyan/xiaoxiApi');                                  // 测试模板消息
+Route::post('api/liuyan/updateformid', 'api/Liuyan/updateBianMinXinXiFormId');                // 更新便民信息formId,我的发布页，新留言提醒

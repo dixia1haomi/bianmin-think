@@ -51,24 +51,22 @@ class Liuyan
 
         // 发送留言模板消息给信息主人(留言数据,便民数据)
         $message = new LiuyanMoban();
-        $bmMsg = $message->sendLiuyanMessage($lyxx,$bmxx);
+        $bmMsg = $message->sendLiuyanMessage($lyxx, $bmxx);
 
         throw new Success(['data' => $bmxx, 'msg' => $bmMsg]);
     }
 
 
-
-    // ------------------------------------------------- 回复留言 -------------------------------------------
-
     // 新增回复
-    public function create_Bianmin_Liuyan_Huifu()
+    public function create_Bianmin_Huifu()
     {
         $uid = BaseToken::get_Token_Uid();
         $liuyan_id = input('post.liuyan_id');
         $huifu_user_id = input('post.huifu_user_id');
         $neirong = input('post.neirong');
-
+        $form_id = input('post.form_id');
         $bmxx_id = input('post.bmxx_id');
+
 
         // 防止自己回复自己（不要改动！！前段是判断str == 不要自己回复自己）
 //        if ($uid == $huifu_user_id) {
@@ -78,23 +76,27 @@ class Liuyan
         // 新增回复
         $model = new huifuModel();
         $hfxx = $model->create([
+            'bmxx_id' => $bmxx_id,
             'liuyan_id' => $liuyan_id,
             'user_id' => $uid,
             'huifu_user_id' => $huifu_user_id,
-            'neirong' => $neirong,
+            'neirong' => $neirong
         ]);
         if ($hfxx === false) {
             //
         }
 
-        // 查询新信息返回客户端（局部刷新）
-        $bmxx = $this->findBianminXinxi($bmxx_id);
+        // 更新便民信息的form_id
+        $bianminModel = Bianminlist::update(['form_id' => $form_id], ['id' => $bmxx_id]);
+        if ($bianminModel === false) {
+            //
+        }
 
         // 发送回复模板消息给留言人(留言数据,便民数据)
         $message = new HuifuMoban();
         $bmMsg = $message->sendHuifuMessage($hfxx);
 
-        throw new Success(['data' => $bmxx, 'msg' => $bmMsg]);
+        throw new Success(['data' => $hfxx, 'msg' => $bmMsg]);
     }
 
 
@@ -108,41 +110,54 @@ class Liuyan
         }
 
         // 添加hid = false,用于客户端对应信息展开折叠
-        $bianmin['hid'] = false;
-        $bianmin['time'] = format_date($bianmin['update_time']);
+        if ($bianmin) {
+            $bianmin['hid'] = false;
+            $bianmin['time'] = format_date($bianmin['update_time']);
+        }
 
         return $bianmin;
     }
 
 
+    // 留新留言提醒我，我的发布页，新留言提醒更新便民信息formId,接受信息ID
+    public function updateBianMinXinXiFormId($id)
+    {
+        $bianmin = bianminlistModel::update(['form_id' => input('post.form_id')], ['id' => input('post.id')]);
+        if ($bianmin === false) {
+            //
+        }
+        throw new Success(['data' => $bianmin]);
+    }
 
     // ---------------------------------------------- 删除留言、回复 ---------------------------------------
 
     // 查询我的留言
-    public function selectMyLiuyan()
-    {
-        $uid = BaseToken::get_Token_Uid();
-
-        $liuyanModel = new liuyanModel();
-        $res = $liuyanModel->where('user_id', $uid)->with(['liuyanwithUser'])->select();
-        if ($res === false) {
-            //
-        }
-        throw new Success(['data' => $res]);
-    }
+//    public function selectMyLiuyan()
+//    {
+//        $uid = BaseToken::get_Token_Uid();
+//
+//        $liuyanModel = new liuyanModel();
+//        $res = $liuyanModel->where('user_id', $uid)->with(['liuyanwithUser'])->select();
+//        if ($res === false) {
+//            //
+//        }
+//        throw new Success(['data' => $res]);
+//    }
 
     // 回复我的
-    public function huifuWode()
-    {
-        $uid = BaseToken::get_Token_Uid();
+//    public function huifuWode()
+//    {
+//        $uid = BaseToken::get_Token_Uid();
+//
+//        $huifuModel = new huifuModel();
+//        $res = $huifuModel->where('huifu_user_id', $uid)->with(['huifuwithHfuser', 'huifuwithBhfuser', 'huifuwithLiuyan'])->select();
+//        if ($res === false) {
+//            //
+//        }
+//        throw new Success(['data' => $res]);
+//    }
 
-        $huifuModel = new huifuModel();
-        $res = $huifuModel->where('huifu_user_id', $uid)->with(['huifuwithHfuser', 'huifuwithBhfuser', 'huifuwithLiuyan'])->select();
-        if ($res === false) {
-            //
-        }
-        throw new Success(['data' => $res]);
-    }
+
 
 
 

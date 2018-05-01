@@ -11,9 +11,10 @@ namespace app\api\controller;
 
 use app\api\model\Bianminlist as bianminlistModel;
 use app\api\model\Img as imgModel;
+use app\api\model\Liuyan as liuyanModel;
+use app\api\model\Huifu as huifuModel;
 use app\api\model\User as userModel;
 use app\api\service\BaseToken;
-use app\api\service\mobanxiaoxi\LiuyanMoban;
 use app\api\service\userinfo\GetUserPhone;
 
 use app\exception\Success;
@@ -34,10 +35,16 @@ class Index
         $model = new bianminlistModel();
         $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order('update_time desc')->page($page, 10)->select();
 
-        // 添加hid = false,用于客户端对应信息展开折叠
-        foreach ($data as $key => $value) {
-            $value['hid'] = false;
-            $value['time'] = format_date($value['update_time']);
+        if($data === false){
+            //
+        }
+
+        // 添加hid = false,用于客户端对应信息展开折叠,$data是数组并且不为空
+        if(is_array($data) && !$data){
+            foreach ($data as $key => $value) {
+                $value['hid'] = false;
+                $value['time'] = format_date($value['update_time']);
+            }
         }
 
         throw new Success(['data' => $data]);
@@ -52,9 +59,11 @@ class Index
             //
         }
 
-        // 添加hid = false,用于客户端对应信息展开折叠
-        $bianmin['hid'] = false;
-        $bianmin['time'] = format_date($bianmin['update_time']);
+        // 添加hid = false,用于客户端对应信息展开折叠,不判断有可能是null而又没有update_time字段报错
+        if ($bianmin) {
+            $bianmin['hid'] = false;
+            $bianmin['time'] = format_date($bianmin['update_time']);
+        }
 
         throw new Success(['data' => $bianmin]);
     }
@@ -71,6 +80,9 @@ class Index
 
         $model = new bianminlistModel();
         $res = $model->create($params);
+        if ($res === false) {
+            //
+        }
 
         throw new Success(['data' => $res]);
     }
@@ -82,6 +94,9 @@ class Index
 
         $model = new imgModel();
         $res = $model->create($params);
+        if ($res === false) {
+            //
+        }
 
         throw new Success(['data' => $res]);
     }
@@ -92,16 +107,36 @@ class Index
         $uid = BaseToken::get_Token_Uid();
 
         $model = new bianminlistModel();
-        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg', 'withLiuyan'])->select();
+        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg', 'withLiuyan'])->find();
+        if ($res === false) {
+            // 日志
+        }
 
-        // 添加hid = false,用于客户端对应信息展开折叠
-        foreach ($res as $key => $value) {
-            $value['hid'] = false;
-            $value['time'] = format_date($value['update_time']);
+        if ($res) {
+            // 添加hid = false,用于客户端对应信息展开折叠
+            $res['hid'] = false;
+            $res['time'] = format_date($res['update_time']);
+
+            // 检查我的发布里的formId是否过期并设置标识位让前端判断是否显示留言提醒按钮（按钮更新formId）
+            if (empty($res['form_id'])) {
+                $res['form_state'] = false;
+            } else {
+                // 检查form_id是否有效
+                $dt = time();           // 当前时间
+                $update_time = strtotime($res['update_time']);
+                $ShiJianCha = $dt - $update_time;
+                // 大于7天过期
+                if ($ShiJianCha > 604800) {
+                    $res['form_state'] = false;
+                } else {
+                    $res['form_state'] = true;
+                }
+            }
         }
 
         throw new Success(['data' => $res]);
     }
+
 
     // 修改便民信息内容
     public function edit_Bianmin_Neirong()
@@ -118,6 +153,7 @@ class Index
         throw new Success(['data' => $res]);
     }
 
+
     // 删除我的发布
     public function deleteMyfabu()
     {
@@ -126,17 +162,34 @@ class Index
         // 根据list_id查询IMG表
         $imgModel = new imgModel();
         $imgArray = $imgModel->where('list_id', $list_id)->select();
+        if($imgArray === false){
+            //
+        }
 
-        // 删除COS图片和IMG表数据
+        // 删除关联的COS图片和IMG表数据
         $this->forDelete($imgArray);
 
-        // 删除list数据
-        $model = new bianminlistModel();
-        $delete_bianmin_res = $model->where('id', $list_id)->delete();
-        if ($delete_bianmin_res === false) {
-            return '出问题了,deleteMyfabu';                             // * 抛给客户端并且记录日志
+        // 删除关联的回复
+        $huifuModel = new huifuModel();
+        $huifu = $huifuModel->where('bmxx_id', $list_id)->delete();
+        if ($huifu === false) {
+            //
         }
-        throw new Success(['data' => $delete_bianmin_res]);
+
+        // 删除关联的留言
+        $liuyanModel = new liuyanModel();
+        $liuyan = $liuyanModel->where('bmxx_id', $list_id)->delete();
+        if ($liuyan === false) {
+            //
+        }
+
+        // 删除信息
+        $bianminModel = new bianminlistModel();
+        $bianmin = $bianminModel->where('id', $list_id)->delete();
+        if ($bianmin === false) {
+            //
+        }
+        throw new Success(['data' => ['liuyan' => $liuyan, 'huifu' => $huifu, 'bianmin' => $bianmin]]);
     }
 
 
@@ -155,7 +208,7 @@ class Index
             $imgModel = new imgModel();
             $imgres = $imgModel->where('id', $imgArray[0]['id'])->delete();
             if ($imgres === false) {
-                return '出问题了';                  // * 抛给客户端并且记录日志
+               //
             }
 
             unset($imgArray[0]);                    // 删除$imgArray[0]
@@ -195,6 +248,10 @@ class Index
         // 限制刷新时间
         // 获取数据库上次更新时间对比当前时间，大于24小时更新，否则返回提示
         $updatetime = $model->where(['id' => $id])->field('update_time')->find();
+        if($updatetime === false){
+            //
+        }
+
 
         $now_time = date("Y-m-d H:i:s", time());
         $now_time = strtotime($now_time);                       // 当前时间
@@ -325,6 +382,9 @@ class Index
 
         $model = new shangjiaModel();
         $res = $model->where('user_id', $uid)->with(['withshangjiaImg'])->find();
+        if($res === false){
+            //
+        }
 
         throw new Success(['data' => $res]);
     }
@@ -437,6 +497,9 @@ class Index
         // 根据商家ID查询商家图片表
         $imgModel = new shangjiaimgModel();
         $imgArray = $imgModel->where('shangjia_id', $id)->select();
+        if($imgArray === false){
+            //
+        }
 
         // 删除COS详情图
         $this->forDelete_ShangjiaCos($imgArray);
@@ -444,6 +507,9 @@ class Index
         // 查询商家表
         $shangjiaModel = new shangjiaModel();
         $shangjia = $shangjiaModel->where('id', $id)->find();
+        if($shangjia === false){
+            //
+        }
 
         // 删除COS头图
         $cos = new cosCon();
