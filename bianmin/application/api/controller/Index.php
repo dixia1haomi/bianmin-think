@@ -40,7 +40,7 @@ class Index
         }
 
         // 添加hid = false,用于客户端对应信息展开折叠,$data是数组并且不为空
-        if(is_array($data) && !$data){
+        if(is_array($data) && !empty($data)){
             foreach ($data as $key => $value) {
                 $value['hid'] = false;
                 $value['time'] = format_date($value['update_time']);
@@ -61,7 +61,7 @@ class Index
 
         // 添加hid = false,用于客户端对应信息展开折叠,不判断有可能是null而又没有update_time字段报错
         if ($bianmin) {
-            $bianmin['hid'] = false;
+            $bianmin['hid'] = true;
             $bianmin['time'] = format_date($bianmin['update_time']);
         }
 

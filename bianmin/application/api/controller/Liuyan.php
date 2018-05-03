@@ -111,7 +111,7 @@ class Liuyan
 
         // 添加hid = false,用于客户端对应信息展开折叠
         if ($bianmin) {
-            $bianmin['hid'] = false;
+            $bianmin['hid'] = true;
             $bianmin['time'] = format_date($bianmin['update_time']);
         }
 
