@@ -130,3 +130,11 @@ Route::post('api/liuyan/createbianminhuifu', 'api/Liuyan/create_Bianmin_Huifu');
 //Route::post('api/liuyan/huifuwode', 'api/Liuyan/huifuWode');
 //Route::post('api/liuyan/xiaoxiapi', 'api/Liuyan/xiaoxiApi');                                  // 测试模板消息
 Route::post('api/liuyan/updateformid', 'api/Liuyan/updateBianMinXinXiFormId');                // 更新便民信息formId,我的发布页，新留言提醒
+
+//app.onError create_App_onError
+Route::post('api/index/onerror', 'api/index/create_App_onError');                               // 记录app.js的错误
+
+// Admin
+Route::post('api/admin/getadmintoken', 'api/Admin/getAdminToken');                      // admin登陆验证
+Route::post('api/admin/verifyadmintoken', 'api/Admin/verifyAdminToken');                // 检查adminToken是否有效
+Route::post('api/admin/selectformiduser', 'api/Admin/selectFormId_User');               // 查询formid有效的用户

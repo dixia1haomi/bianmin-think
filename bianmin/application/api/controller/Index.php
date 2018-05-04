@@ -17,11 +17,13 @@ use app\api\model\User as userModel;
 use app\api\service\BaseToken;
 use app\api\service\userinfo\GetUserPhone;
 
+
 use app\exception\Success;
 use app\api\controller\Cos as cosCon;
 
 use app\api\model\Shangjia as shangjiaModel;
 use app\api\model\Shangjiaimg as shangjiaimgModel;
+use think\Log;
 
 class Index
 {
@@ -35,16 +37,19 @@ class Index
         $model = new bianminlistModel();
         $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order('update_time desc')->page($page, 10)->select();
 
-        if($data === false){
+        if ($data === false) {
             //
         }
 
         // 添加hid = false,用于客户端对应信息展开折叠,$data是数组并且不为空
-        if(is_array($data) && !empty($data)){
+        if (is_array($data) && !empty($data)) {
             foreach ($data as $key => $value) {
                 $value['hid'] = false;
                 $value['time'] = format_date($value['update_time']);
+                // 增加所有查询的流浪次数
+//                $model->where('id',$value['id'])->setInc('liulangcishu');
             }
+
         }
 
         throw new Success(['data' => $data]);
@@ -62,7 +67,7 @@ class Index
         // 添加hid = false,用于客户端对应信息展开折叠,不判断有可能是null而又没有update_time字段报错
         if ($bianmin) {
             $bianmin['hid'] = true;
-            $bianmin['time'] = format_date($bianmin['update_time']);
+            $bianmin['time'] = format_date($bianmin['update_time']) || '刚刚';
         }
 
         throw new Success(['data' => $bianmin]);
@@ -86,6 +91,7 @@ class Index
 
         throw new Success(['data' => $res]);
     }
+
 
     // 创建图片
     public function createImg()
@@ -162,7 +168,7 @@ class Index
         // 根据list_id查询IMG表
         $imgModel = new imgModel();
         $imgArray = $imgModel->where('list_id', $list_id)->select();
-        if($imgArray === false){
+        if ($imgArray === false) {
             //
         }
 
@@ -208,7 +214,7 @@ class Index
             $imgModel = new imgModel();
             $imgres = $imgModel->where('id', $imgArray[0]['id'])->delete();
             if ($imgres === false) {
-               //
+                //
             }
 
             unset($imgArray[0]);                    // 删除$imgArray[0]
@@ -230,7 +236,7 @@ class Index
     {
         $id = input('post.id');
         $model = new bianminlistModel();
-        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu');
+        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu',rand(1,5));
 
         if ($liulangcishu === false) {
             // 增加流浪次数失败了
@@ -248,7 +254,7 @@ class Index
         // 限制刷新时间
         // 获取数据库上次更新时间对比当前时间，大于24小时更新，否则返回提示
         $updatetime = $model->where(['id' => $id])->field('update_time')->find();
-        if($updatetime === false){
+        if ($updatetime === false) {
             //
         }
 
@@ -382,7 +388,7 @@ class Index
 
         $model = new shangjiaModel();
         $res = $model->where('user_id', $uid)->with(['withshangjiaImg'])->find();
-        if($res === false){
+        if ($res === false) {
             //
         }
 
@@ -497,7 +503,7 @@ class Index
         // 根据商家ID查询商家图片表
         $imgModel = new shangjiaimgModel();
         $imgArray = $imgModel->where('shangjia_id', $id)->select();
-        if($imgArray === false){
+        if ($imgArray === false) {
             //
         }
 
@@ -507,7 +513,7 @@ class Index
         // 查询商家表
         $shangjiaModel = new shangjiaModel();
         $shangjia = $shangjiaModel->where('id', $id)->find();
-        if($shangjia === false){
+        if ($shangjia === false) {
             //
         }
 
@@ -556,6 +562,20 @@ class Index
             // 没有图片，直接删除数据
             return true;
         }
+    }
+
+
+    // -------------------------------------------- 记录app.onError错误 ----------------------------------------------------
+
+    // API
+    public function create_App_onError()
+    {
+        $msg = input('post.msg');
+        Log::init([
+            'type' => 'file',
+            'level' => ['error'],
+        ]);
+        Log::record($msg, 'error');
     }
 
 
