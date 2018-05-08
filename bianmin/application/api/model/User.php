@@ -34,7 +34,6 @@ class User extends Model
     // 登陆
     public static function saveUserinfoModel($info, $uid)
     {
-
         $res = self::update([
             'nick_name' => $info['nickName'],
             'avatar_url' => $info['avatarUrl'],

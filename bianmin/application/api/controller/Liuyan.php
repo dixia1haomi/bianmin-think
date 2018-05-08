@@ -100,8 +100,8 @@ class Liuyan
     }
 
 
-    // 查询单个便民信息（接受信息ID，用于留言回复局部刷新）
-    public function findBianminXinxi($bmxx_id)
+    // 私有查询单个便民信息（接受信息ID，用于留言回复局部刷新）
+    private function findBianminXinxi($bmxx_id)
     {
         $bianminModel = new bianminlistModel();
         $bianmin = $bianminModel->where('id', $bmxx_id)->with(['withUser', 'withImg', 'withLiuyan'])->find();

@@ -138,3 +138,14 @@ Route::post('api/index/onerror', 'api/index/create_App_onError');               
 Route::post('api/admin/getadmintoken', 'api/Admin/getAdminToken');                      // admin登陆验证
 Route::post('api/admin/verifyadmintoken', 'api/Admin/verifyAdminToken');                // 检查adminToken是否有效
 Route::post('api/admin/selectformiduser', 'api/Admin/selectFormId_User');               // 查询formid有效的用户
+
+// 二维码
+Route::post('api/index/erweima', 'api/Index/erweima');
+Route::post('api/index/createbmxxdingzhi', 'api/Index/createBmxxDingZhi_User');
+
+// 测试crontab
+Route::post('api/crontab/checkbianmindingzhi', 'api/Crontab/crontab_Check_BianMin_Dingzhi_state');  // 更改便民信息表顶置状态
+Route::post('api/crontab/deletebianmin', 'api/Crontab/crontab_Delete_BianMin');                     // 删除超过30天的便民信息
+Route::post('api/crontab/checkuserformid', 'api/Crontab/crontab_CheckUserFormId');                  // 检查user表formId
+Route::post('api/crontab/checkbianminlistformid', 'api/Crontab/crontab_CheckBianMinListFormId');    // 检查便民信息表formId
+Route::post('api/crontab/checkliuyanformid', 'api/Crontab/crontab_CheckLiuYanFormId');              // 检查留言表formId

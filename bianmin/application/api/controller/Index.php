@@ -9,12 +9,15 @@
 namespace app\api\controller;
 
 
+use app\api\model\Admin as adminModel;
 use app\api\model\Bianminlist as bianminlistModel;
 use app\api\model\Img as imgModel;
 use app\api\model\Liuyan as liuyanModel;
 use app\api\model\Huifu as huifuModel;
 use app\api\model\User as userModel;
+use app\api\model\Bmxxdingzhijilu as bmxxdngzhijiluModel;
 use app\api\service\BaseToken;
+use app\api\service\shengchengerweima\canshuma;
 use app\api\service\userinfo\GetUserPhone;
 
 
@@ -29,13 +32,31 @@ class Index
 {
 
 
+
+    // * 删除已生成的二维码：删除信息的时候删除
+
+
+
+    // 测试二维码
+    public function erweima($scene)
+    {
+        $canshuma = new canshuma();
+        $erweima = $canshuma->getCanShuMa($scene);
+        if($erweima === false){
+            // * 这里应该醒目提示，分享失败很伤！！
+            throw new Success(['msg'=>'生成失败','data' => null]);
+        }
+        throw new Success(['msg'=>'ok','data' => $erweima]);
+    }
+
+
     // 获取信息列表
     public function getList($page = 1)
     {
         // 接受分页参数
 //        $page = input('post.page');
         $model = new bianminlistModel();
-        $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order('update_time desc')->page($page, 10)->select();
+        $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 10)->select();
 
         if ($data === false) {
             //
@@ -55,11 +76,11 @@ class Index
         throw new Success(['data' => $data]);
     }
 
-    // 查询单个便民信息（接受信息ID，用于留言回复局部刷新）
+    // 查询单个便民信息（接受信息ID）
     public function findBianmin($id)
     {
         $bianminModel = new bianminlistModel();
-        $bianmin = $bianminModel->where('id', $id)->with(['withUser', 'withImg', 'withLiuyan'])->find();
+        $bianmin = $bianminModel->where('id', $id)->with(['withUser', 'withImg', 'withLiuyan', 'withBangdinguser'])->find();
         if ($bianmin === false) {
             //
         }
@@ -67,7 +88,7 @@ class Index
         // 添加hid = false,用于客户端对应信息展开折叠,不判断有可能是null而又没有update_time字段报错
         if ($bianmin) {
             $bianmin['hid'] = true;
-            $bianmin['time'] = format_date($bianmin['update_time']) || '刚刚';
+            $bianmin['time'] = format_date($bianmin['update_time']);
         }
 
         throw new Success(['data' => $bianmin]);
@@ -113,7 +134,7 @@ class Index
         $uid = BaseToken::get_Token_Uid();
 
         $model = new bianminlistModel();
-        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg', 'withLiuyan'])->find();
+        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg', 'withLiuyan', 'withBangdinguser'])->find();
         if ($res === false) {
             // 日志
         }
@@ -143,6 +164,61 @@ class Index
         throw new Success(['data' => $res]);
     }
 
+    // ------------------------------ 便民信息帮顶 ------------------------------
+
+    // 增加便民信息帮顶用户(接受信息ID)
+    // 返回 msg = ok || 已经顶过了
+    // * 2和3操作两张表，应该使用事务！！！
+    public function createBmxxDingZhi_User($id)
+    {
+        // 1.防止重复顶置
+        // 2.新增顶置用户表数据
+        // 3.更新便民信息表信息顶置时间，顶置状态
+
+        // 1.防止重复顶置--根据信息ID查询便民信息顶置表中是否存在此用户
+        $uid = BaseToken::get_Token_Uid();
+        $bmxxdngzhijilumodel = new bmxxdngzhijiluModel();
+        $model = $bmxxdngzhijilumodel->where(['bmxx_id' => $id, 'user_id' => $uid])->find();
+        if ($model === false) {
+            //
+        }
+
+        // 如果用户存在，已经顶过了，抛出
+        if ($model) {
+            throw new Success(['msg' => '已经顶过了', 'data' => $model]);
+        }
+
+        // 2.新增顶置用户表数据
+        $res = $bmxxdngzhijilumodel->create(['bmxx_id' => $id, 'user_id' => $uid]);
+        if ($res === false) {
+            //
+        }
+
+        // 3.更新便民信息表信息顶置时间，顶置状态 (使用实例化后的防止update_time时间被更新导致from_id有效期出现误差)
+        $bianminlistModel = new bianminlistModel();
+
+        // 总顶置时间 = 已有顶置时间 + 24小时，所以提前判断已有顶置时间是否有（字段是int类型默认0）
+        $dingzhi_time = $bianminlistModel->where('id', $id)->value('dingzhi_time');
+        if ($dingzhi_time === false) {
+            //
+        }
+
+        // 如果没有顶置过，取当前时间+24小时，否则取已有的顶置时间+24小时
+        if ($dingzhi_time === 0) {
+            $dztime = time() + (60 * 60 * 24);
+        } else {
+            $dztime = $dingzhi_time + (60 * 60 * 24);
+        }
+
+        // 更新顶置状态和顶置时间
+        $bianmin = $bianminlistModel->where('id', $id)->setField(['dingzhi_state' => 1, 'dingzhi_time' => $dztime]);
+        if ($bianmin === false) {
+            //
+        }
+
+        throw new Success(['msg' => 'ok', 'data' => $res]);
+    }
+
 
     // 修改便民信息内容
     public function edit_Bianmin_Neirong()
@@ -161,10 +237,10 @@ class Index
 
 
     // 删除我的发布
-    public function deleteMyfabu()
+    public function deleteMyfabu($list_id)
     {
         // 接受信息ID先删除关联的图片
-        $list_id = input('post.list_id');
+//        $list_id = input('post.list_id');
         // 根据list_id查询IMG表
         $imgModel = new imgModel();
         $imgArray = $imgModel->where('list_id', $list_id)->select();
@@ -188,6 +264,13 @@ class Index
         if ($liuyan === false) {
             //
         }
+
+        // * 删除帮顶数据
+        // *
+
+        // * 删除这条信息的分享码
+        // *
+
 
         // 删除信息
         $bianminModel = new bianminlistModel();
@@ -236,7 +319,7 @@ class Index
     {
         $id = input('post.id');
         $model = new bianminlistModel();
-        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu',rand(1,5));
+        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu', rand(1, 5));
 
         if ($liulangcishu === false) {
             // 增加流浪次数失败了

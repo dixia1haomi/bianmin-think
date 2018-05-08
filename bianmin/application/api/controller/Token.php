@@ -73,18 +73,18 @@ class Token
             // form_id为空，设置登陆态为false
             $loginState = false;
         } else {
-            // 有form_id，检查是否过期
-            $dt = time();           // 当前时间
-            $update_time = strtotime($user['update_time']);
-            $ShiJianCha = $dt - $update_time;
-
-            if ($ShiJianCha > 604800) {
-                // 大于7天过期，设置登陆态为false
-                $loginState = false;
-            } else {
-                // form_id有效，设置登陆态为true
-                $loginState = true;
-            }
+//            // 有form_id，检查是否过期
+//            $dt = time();           // 当前时间
+//            $update_time = strtotime($user['update_time']);
+//            $ShiJianCha = $dt - $update_time;
+//
+//            if ($ShiJianCha > 604800) {
+//                // 大于7天过期，设置登陆态为false
+//                $loginState = false;
+//            } else {
+//                // form_id有效，设置登陆态为true
+            $loginState = true;
+//            }
         }
         return $loginState;
     }

@@ -30,4 +30,12 @@ class Bianminlist extends Model
     {
         return $this->hasMany('liuyan', 'bmxx_id', 'id')->with(['liuyanwithUser'])->with(['liuyanwithHuifu']);
     }
+
+    // 关联->bangdinguser
+    public function withBangdinguser()
+    {
+        return $this->hasMany('bmxxdingzhijilu', 'bmxx_id', 'id')->with(['withDingzhiuser']);
+    }
+
+
 }
