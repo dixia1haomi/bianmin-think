@@ -56,7 +56,7 @@ class Index
         // 接受分页参数
 //        $page = input('post.page');
         $model = new bianminlistModel();
-        $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 10)->select();
+        $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 20)->select();
 
         if ($data === false) {
             //
@@ -87,7 +87,7 @@ class Index
 
         // 添加hid = false,用于客户端对应信息展开折叠,不判断有可能是null而又没有update_time字段报错
         if ($bianmin) {
-            $bianmin['hid'] = true;
+            $bianmin['hid'] = false;
             $bianmin['time'] = format_date($bianmin['update_time']);
         }
 

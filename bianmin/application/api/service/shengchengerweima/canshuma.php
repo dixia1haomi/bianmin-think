@@ -34,7 +34,7 @@ class canshuma
 //        header('content-type:image/jpg');
         $data = array();
         $data['scene'] = $scene;//自定义信息，可以填写诸如识别用户身份的字段，注意用中文时的情况
-        $data['page'] = "pages/index/index1";//扫描后对应的path
+        $data['page'] = "pages/bmxx/erweimafenxiangye";//扫描后对应的path
         $data['width'] = 200;//自定义的尺寸
 //        $data['auto_color'] = false;
 //        $data['line_color'] = '{"r":"28","g":"157","b":"240"}';
