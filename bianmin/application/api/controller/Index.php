@@ -33,9 +33,14 @@ class Index
 
 
 
-    // * 删除已生成的二维码：删除信息的时候删除
+    // * 删除已生成的二维码：删除信息的时候删除11
 
 
+    // 测试类目模板数据
+    public function leimuMoBan(){
+        $leimu = config('wx_config.leimu');
+        throw new Success(['msg'=>'ok','data' => $leimu]);
+    }
 
     // 测试二维码
     public function erweima($scene)

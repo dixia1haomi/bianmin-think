@@ -149,3 +149,6 @@ Route::post('api/crontab/deletebianmin', 'api/Crontab/crontab_Delete_BianMin'); 
 Route::post('api/crontab/checkuserformid', 'api/Crontab/crontab_CheckUserFormId');                  // 检查user表formId
 Route::post('api/crontab/checkbianminlistformid', 'api/Crontab/crontab_CheckBianMinListFormId');    // 检查便民信息表formId
 Route::post('api/crontab/checkliuyanformid', 'api/Crontab/crontab_CheckLiuYanFormId');              // 检查留言表formId
+
+// 测试取类目模板
+Route::post('api/index/leimu', 'api/Index/leimuMoBan');
