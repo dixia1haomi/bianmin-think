@@ -28,7 +28,7 @@ class User
 
         $res = userModel::saveUserinfoModel($info,$uid);
         if ($res === false) {
-            //
+            throw new QueryDbException(['msg'=>'saveUserInfo']);
         }
         throw new Success(['data' => $uid]);
     }

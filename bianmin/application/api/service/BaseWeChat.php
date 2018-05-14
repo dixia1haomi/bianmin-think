@@ -37,7 +37,7 @@ class BaseWeChat
         }else {
             if (array_key_exists('errcode', $wxResult)) {
                 //如果微信返回的数据中包含errcode就抛出异常告诉客户端
-                throw new WeChatException(['msg' => $wxResult['errmsg'], 'errorCode' => $wxResult['errcode']]);
+                throw new WeChatException(['msg' => '微信内部错误，获取openid和session_key的结果包含errcode'.$wxResult['errmsg']]);
             }
             // 返回openid和sessionKey
             return $wxResult;

@@ -11,6 +11,7 @@
 namespace app\api\service;
 
 
+use app\exception\AccessTokenException;
 use think\Exception;
 
 class AccessToken
@@ -37,19 +38,19 @@ class AccessToken
     public function get()
     {
         $token = $this->getFromCache();
-        if(!$token){
+        if (!$token) {
             return $this->getFromWxServer();
-        }
-        else{
+        } else {
             return $token;
         }
     }
 
     // 去缓存中检查acc_token是否还有效
-    private function getFromCache(){
+    private function getFromCache()
+    {
         $token = cache(self::TOKEN_CACHED_KEY);
         // 如果缓存中有acc_token,直接返回（这种自己修改过，原代码可能是错误的）
-        if($token){
+        if ($token) {
             return $token['access_token'];
         }
         return null;
@@ -60,12 +61,11 @@ class AccessToken
     {
         $token = curl_get($this->tokenUrl);
         $token = json_decode($token, true);
-        if (!$token)
-        {
-            throw new Exception('获取AccessToken异常');
+        if (!$token) {
+            throw new AccessTokenException(['msg' => '去微信的接口获取AccessToken异常' . $token]);
         }
-        if(!empty($token['errcode'])){
-            throw new Exception($token['errmsg']);
+        if (!empty($token['errcode'])) {
+            throw new AccessTokenException(['msg' => '去微信的接口获取AccessToken中包含errcode' . $token['errmsg']]);
         }
         // 保存到缓存
         $this->saveToCache($token);
@@ -73,8 +73,12 @@ class AccessToken
     }
 
     // 保存到缓存
-    private function saveToCache($token){
-        cache(self::TOKEN_CACHED_KEY, $token, self::TOKEN_EXPIRE_IN);
+    private function saveToCache($token)
+    {
+        $cache = cache(self::TOKEN_CACHED_KEY, $token, self::TOKEN_EXPIRE_IN);
+        if (!$cache) {
+            throw new AccessTokenException(['msg' => '获取的AccessToken写入到redis缓存失败']);
+        }
     }
 
     //    private function accessIn

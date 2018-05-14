@@ -33,7 +33,7 @@ class UserguoqiMoban extends MobanXiaoxi
 
         $this->tplID = self::MOBANXIAOXI_ID;                            // 模板消息ID
         $this->formID = $form_id;                                       // formID
-        $this->page = '/pages/index/index1';                            // 进入路径
+        $this->page = 'pages/index/index1';                            // 进入路径
         $this->createMessageData($nick_name);                           // 创建模板消息的data数组
         $backmsg = parent::sendMessage($openid);                         // 条送发送模板消息携带openid
 

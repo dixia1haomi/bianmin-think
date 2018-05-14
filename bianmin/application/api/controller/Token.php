@@ -10,6 +10,7 @@ namespace app\api\controller;
 
 
 use app\api\service\UserToken;
+use app\exception\QueryDbException;
 use app\exception\Success;
 use app\exception\TokenException;
 use think\Cache;
@@ -65,7 +66,7 @@ class Token
         $userModel = new UserModel();
         $user = $userModel->where('id', $cache['uid'])->find();
         if ($user === false) {
-            //
+            throw new QueryDbException(['msg'=>'checkformId']);
         }
 
         // 检查formID
@@ -73,18 +74,8 @@ class Token
             // form_id为空，设置登陆态为false
             $loginState = false;
         } else {
-//            // 有form_id，检查是否过期
-//            $dt = time();           // 当前时间
-//            $update_time = strtotime($user['update_time']);
-//            $ShiJianCha = $dt - $update_time;
-//
-//            if ($ShiJianCha > 604800) {
-//                // 大于7天过期，设置登陆态为false
-//                $loginState = false;
-//            } else {
-//                // form_id有效，设置登陆态为true
+            // 这里formid直接返回不做检查、检查formid的任务改成计划任务自动检查删除
             $loginState = true;
-//            }
         }
         return $loginState;
     }

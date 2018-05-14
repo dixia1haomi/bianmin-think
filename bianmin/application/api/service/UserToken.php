@@ -45,14 +45,10 @@ class UserToken
         } else {
             if (array_key_exists('errcode', $wxResult)) {
                 //如果微信返回的数据中包含errcode就抛出异常告诉客户端
-                throw new WeChatException([
-                    'msg' => $wxResult['errmsg'],
-                    'errorCode' => $wxResult['errcode']
-                ]);
+                throw new WeChatException(['msg' => $wxResult['errmsg']]);
             } else {
                 // 返回客户端缓存后的token的key
                 return $this->grantToken($wxResult);
-//                throw new Success(['data' => $this->grantToken($wxResult)]);
             }
         }
     }
@@ -87,7 +83,7 @@ class UserToken
 
         $token = cache($tokenKey, $tokenValue, $token_expire);    //缓存token
         if (!$token) {
-            throw new TokenException(['msg' => '缓存token时异常，来自save_Cache_Token']);
+            throw new TokenException(['msg' => 'token写入缓存时失败，来自save_Cache_Token']);
         }
 
         // 检查并返回登录态(2018/04/30添加的登陆态检查)

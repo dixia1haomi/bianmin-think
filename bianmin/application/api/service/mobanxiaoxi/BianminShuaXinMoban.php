@@ -9,6 +9,7 @@
 namespace app\api\service\mobanxiaoxi;
 
 use app\api\model\User as userModel;
+use app\exception\QueryDbException;
 
 class BianminShuaXinMoban extends MobanXiaoxi
 {
@@ -30,7 +31,7 @@ class BianminShuaXinMoban extends MobanXiaoxi
 
         $this->tplID = self::MOBANXIAOXI_ID;                            // 模板消息ID
         $this->formID = $form_id;                                       // formID
-        $this->page = '/pages/wode/myfabu';                             // 进入路径
+        $this->page = 'pages/wode/myfabu';                             // 进入路径
         $this->createMessageData();                           // 创建模板消息的data数组
         $backmsg = parent::sendMessage($this->getOpenID($value['user_id']));                        // 条送发送模板消息携带openid
 
@@ -65,7 +66,7 @@ class BianminShuaXinMoban extends MobanXiaoxi
         $userModel = new userModel();
         $user = $userModel->where('id',$uid)->find();
         if ($user === false) {
-            //
+            throw new QueryDbException(['msg'=>'getOpenID']);
         }
         return $user->openid;
     }

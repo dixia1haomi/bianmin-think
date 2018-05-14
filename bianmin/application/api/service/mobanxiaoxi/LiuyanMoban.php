@@ -11,6 +11,8 @@ namespace app\api\service\mobanxiaoxi;
 
 use app\api\model\User as userModel;
 use app\api\model\Bianminlist as bianminlistModel;
+use app\exception\QueryDbException;
+use think\Log;
 
 class LiuyanMoban extends MobanXiaoxi
 {
@@ -35,7 +37,7 @@ class LiuyanMoban extends MobanXiaoxi
 
             $this->tplID = self::MOBANXIAOXI_ID;                                    // 模板消息ID
             $this->formID = $bmxx->form_id;                                         // 信息表formID
-            $this->page = '/pages/wode/myfabu';                                    // 进入路径
+            $this->page = "pages/wode/myfabu";                                      // 进入路径
             $this->createMessageData($lyxx);                                             // 创建模板消息的data数组
             $msgres = parent::sendMessage($openid);       // 条送发送模板消息携带openid
 
@@ -44,6 +46,11 @@ class LiuyanMoban extends MobanXiaoxi
                 $msg = '模板消息发送成功';
             } else {
                 $msg = '模板消息发送失败,' . $msgres['errmsg'];
+                Log::init([
+                    'type' => 'File',
+                    'path' => LOG_PATH_MOBANXIAOXI_EXCEPTION,   // 自定义的日志文件路径
+                ]);
+                Log::record('留言时'.$msg, 'MoBanXiaoXiException');
             }
         }else{
             $msg = $checkformId;
@@ -84,7 +91,7 @@ class LiuyanMoban extends MobanXiaoxi
         $userModel = new userModel();
         $user = $userModel->find($huifu_user_id);
         if ($user === false) {
-            //
+            throw new QueryDbException(['msg'=>'getOpenID-liuyanmoban']);
         }
         return $user->openid;
     }
@@ -117,7 +124,7 @@ class LiuyanMoban extends MobanXiaoxi
         $userModel = new userModel();
         $lyuser = $userModel->find($lyuid);
         if ($lyuser === false) {
-            //
+            throw new QueryDbException(['msg'=>'getLiuyanUserName-liuyanmoban']);
         }
         return $lyuser->nick_name;
     }
@@ -128,7 +135,7 @@ class LiuyanMoban extends MobanXiaoxi
         $bianminModel = new bianminlistModel();
         $bianmin = $bianminModel->where('id', $id)->setField('form_id', '');
         if ($bianmin === false) {
-            //
+            throw new QueryDbException(['msg'=>'deleteFormID-liuyanmoban']);
         }
         return true;
     }

@@ -11,6 +11,8 @@ namespace app\api\service\mobanxiaoxi;
 use app\api\model\Liuyan;
 use app\api\model\User as userModel;
 use app\api\model\Liuyan as liuyanModel;
+use app\exception\QueryDbException;
+use think\Log;
 
 class HuifuMoban extends MobanXiaoxi
 {
@@ -36,7 +38,7 @@ class HuifuMoban extends MobanXiaoxi
 
             $this->tplID = self::MOBANXIAOXI_ID;                                    // 模板消息ID
             $this->formID = $liuyan->form_id;                                         // 信息表formID
-            $this->page = '/pages/bmxx/detail?id=' . $liuyan->bmxx_id;   // 进入路径
+            $this->page = 'pages/bmxx/detail?id=' . $liuyan->bmxx_id;   // 进入路径
             $this->createMessageData($hfxx, $liuyan->neirong);                                             // 创建模板消息的data数组
             $msgres = parent::sendMessage($openid);       // 条送发送模板消息携带openid
 
@@ -44,6 +46,11 @@ class HuifuMoban extends MobanXiaoxi
                 $msg = '模板消息发送成功';
             } else {
                 $msg = '模板消息发送失败,' . $msgres['errmsg'];
+                Log::init([
+                    'type' => 'File',
+                    'path' => LOG_PATH_MOBANXIAOXI_EXCEPTION,   // 自定义的日志文件路径
+                ]);
+                Log::record('回复时'.$msg, 'MoBanXiaoXiException');
             }
         }else{
             $msg = $checkformId;
@@ -88,7 +95,7 @@ class HuifuMoban extends MobanXiaoxi
         $liuyanModel = new liuyanModel();
         $liuyan = $liuyanModel->where('id', $liuyan_id)->find();
         if ($liuyan === false) {
-            //
+            throw new QueryDbException(['msg'=>'findLiuyan-huifumoban']);
         }
         return $liuyan;
     }
@@ -122,7 +129,7 @@ class HuifuMoban extends MobanXiaoxi
         $userModel = new userModel();
         $user = $userModel->find($huifu_user_id);
         if ($user === false) {
-            //
+            throw new QueryDbException(['msg'=>'getOpenID-huifumoban']);
         }
         return $user->openid;
     }
@@ -133,17 +140,10 @@ class HuifuMoban extends MobanXiaoxi
         $userModel = new userModel();
         $fhuser = $userModel->find($fhuid);
         if ($fhuser === false) {
-            //
+            throw new QueryDbException(['msg'=>'getHuifuUserName']);
         }
         return $fhuser->nick_name;
     }
 
-//    private function getBianMinXinXi_Id($liuyanId){
-//        $liuyanModel = new liuyanModel();
-//        $liuyan = $liuyanModel->where('id',$liuyanId)->find();
-//        if($liuyan === false){
-//            //
-//        }
-//        return $liuyan->bmxx_id;
-//    }
+
 }

@@ -9,13 +9,15 @@
 namespace app\exception;
 
 
+use think\Log;
+
 class TokenException extends BaseException
 {
     public $code = 200;
 
     public $msg = 'token异常，TokenException';
 
-    public $errorCode = 40000;
+    public $errorCode = 10000;
 }
 
 // 参数错误 $Code = 10001
