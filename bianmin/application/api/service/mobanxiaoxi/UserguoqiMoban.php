@@ -11,10 +11,11 @@ namespace app\api\service\mobanxiaoxi;
 
 class UserguoqiMoban extends MobanXiaoxi
 {
-    // 邀请结果提醒
-    // 邀请人 {{keyword1.DATA}}
-    // 备注 {{keyword2.DATA}}
-    const MOBANXIAOXI_ID = "-wJXMwoEs0Ob-hIwqSOLoGgCMWGjQ3LZ7v5Jr773m9o";
+    // 服务进度通知
+    // 服务状态 {{keyword1.DATA}}
+    // 温馨提示 {{keyword2.DATA}}
+
+    const MOBANXIAOXI_ID = "lRaOsAwfC_sKNd9_zC6uJIVr_7v3_09Y6cIpvchGudQ";
 
     // 发给谁（openid）                  便民信息user_id查询获取
     // form_id                          便民信息直接获取
@@ -29,30 +30,30 @@ class UserguoqiMoban extends MobanXiaoxi
         // 获得openid
         $openid = $value['openid'];
         $form_id = $value['form_id'];
-        $nick_name = $value['nick_name'];
+//        $nick_name = $value['nick_name'];
 
         $this->tplID = self::MOBANXIAOXI_ID;                            // 模板消息ID
         $this->formID = $form_id;                                       // formID
         $this->page = 'pages/index/index1';                            // 进入路径
-        $this->createMessageData($nick_name);                           // 创建模板消息的data数组
+        $this->createMessageData();                           // 创建模板消息的data数组
         $backmsg = parent::sendMessage($openid);                         // 条送发送模板消息携带openid
 
         return $backmsg;
     }
 
-    private function createMessageData($nick_name)
+    private function createMessageData()
     {
-        // 邀请结果提醒
-        // 邀请人 {{keyword1.DATA}}
-        // 备注 {{keyword2.DATA}}
+        // 服务进度通知
+        // 服务状态 {{keyword1.DATA}}
+        // 温馨提示 {{keyword2.DATA}}
 
         $data = [
             'keyword1' => [
-                'value' => $nick_name,
+                'value' => '访问邀请',
             ],
 
             'keyword2' => [
-                'value' => '亲，袋鼠同城+邀请您查看本周同城信息',
+                'value' => '亲，袋鼠同城邀请您访问、或发布信息。',
                 'color' => '#27408B'
             ]
         ];

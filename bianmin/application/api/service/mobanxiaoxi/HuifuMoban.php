@@ -38,7 +38,7 @@ class HuifuMoban extends MobanXiaoxi
 
             $this->tplID = self::MOBANXIAOXI_ID;                                    // 模板消息ID
             $this->formID = $liuyan->form_id;                                         // 信息表formID
-            $this->page = 'pages/bmxx/detail?id=' . $liuyan->bmxx_id;   // 进入路径
+            $this->page = 'pages/bmxx/chakanhuifu?id=' . $liuyan->bmxx_id;   // 进入路径
             $this->createMessageData($hfxx, $liuyan->neirong);                                             // 创建模板消息的data数组
             $msgres = parent::sendMessage($openid);       // 条送发送模板消息携带openid
 

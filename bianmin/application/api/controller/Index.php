@@ -40,7 +40,7 @@ class Index
         $updatephone = $model->where(['id' => $uid])->setField('phone', $phone["purePhoneNumber"]);
 
         if ($updatephone === false) {
-            throw new QueryDbException(['msg'=>'电话解密getPhone']);
+            throw new QueryDbException(['msg' => '电话解密getPhone']);
         }
         throw new Success(['data' => $phone["purePhoneNumber"]]);
     }
