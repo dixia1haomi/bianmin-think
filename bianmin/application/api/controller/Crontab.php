@@ -119,7 +119,7 @@ class Crontab
         $userModel = new userModel();
         // not between 不在 当前时间至6天以前的这个范围 查询 （只查询6天以外的数据）
         $time = time();
-        $time_6 = $time - (60 * 60 * 24);   // 6天以外
+        $time_6 = $time - (60 * 60 * 24 * 6);   // 6天以外
         $user = $userModel->where('form_id', '<>', '')->whereTime('update_time', 'not between', [$time_6, $time])->select();
         if ($user === false) {
             throw new QueryDbException(['msg'=>'crontab用户7天回访提醒crontab_CheckUserFormId']);
@@ -192,7 +192,7 @@ class Crontab
 
         // 查询formid不为空并且是7天以内更新的
         $time = time();
-        $time_6 = $time - (60 * 60 * 24);    // 6天前以外
+        $time_6 = $time - (60 * 60 * 24 * 3);    // 6天前以外
         $bianmin = $bianminlistModel->where('form_id', '<>', '')->whereTime('update_time', 'not between', [$time_6, $time])->select();
         if ($bianmin === false) {
             throw new QueryDbException(['msg'=>'crontab便民信息刷新提醒crontab_CheckBianMinListFormId']);

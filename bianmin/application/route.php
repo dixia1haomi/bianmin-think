@@ -15,7 +15,6 @@
 use think\Route;
 
 
-
 // 客服
 Route::get('api/kefu/getkefu', 'api/kefu/getKefu');             // 客服接口  gzh_accsee_token
 
@@ -33,8 +32,6 @@ Route::post('api/cos/qianmingdanci', 'api/cos/cosQianMingDanci');   // COS签名
 // ---------------------------------------------------------- 登陆 ----------------------------------------------------------
 
 Route::post('api/user/saveuserinfo', 'api/User/saveUserInfo');
-
-
 
 
 // ---------------------------------------------------------- 便民信息 ----------------------------------------------------------
@@ -68,18 +65,24 @@ Route::post('api/xinxi/createbmxxdingzhi', 'api/Xinxi/createBmxxDingZhi_User');
 
 // ---------------------------------------------------------- 商家 ----------------------------------------------------------
 
-Route::post('api/index/createshangjia', 'api/Index/createShangjia');                         // 新增商家
-Route::post('api/index/createshangjiaimg', 'api/Index/createShangjiaImg');                   // 新增商家图片
-Route::post('api/index/findshangjia', 'api/Index/findShangjia');                             // 查询商家详情
-Route::post('api/index/selectshangjia', 'api/Index/selectShangjia');                         // 查询商家列表
-Route::post('api/index/myshangjia', 'api/Index/getMyShangjia');                              // 我的店铺
-Route::post('api/index/deleteshangjia', 'api/Index/deleteMyShangjia');                       // 删除店铺
-Route::post('api/index/deleteshangjiaimg', 'api/Index/deleteMyShangjia_xiangqingtu_item');   // 删除商家详情图（每次1张）
-Route::post('api/index/xiugaishangjiatoutu', 'api/Index/xiugaiMyShangjia_toutu');            // 修改商家头图
-Route::post('api/index/xiugaishangjianame', 'api/Index/xiugaiMyShangjia_name');              // 修改商家名称
-Route::post('api/index/xiugaishangjiamiaoshu', 'api/Index/xiugaiMyShangjia_miaoshu');        // 修改商家描述
-Route::post('api/index/xiugaishangjiadizhi', 'api/Index/xiugaiMyShangjia_dizhi');            // 修改商家地址
+Route::post('api/shangjia/createshangjia', 'api/Shangjia/createShangjia');                         // 新增商家
+Route::post('api/shangjia/findshangjia', 'api/Shangjia/findShangjia');                             // 查询商家详情
+Route::post('api/shangjia/selectshangjia', 'api/Shangjia/selectShangjia');                         // 查询商家列表
+Route::post('api/shangjia/myshangjia', 'api/Shangjia/getMyShangjia');                              // 我的店铺
+Route::post('api/shangjia/deleteshangjia', 'api/Shangjia/deleteMyShangjia');                       // 删除店铺
+//Route::post('api/shangjia/deleteshangjiaimg', 'api/Shangjia/deleteMyShangjia_xiangqingtu_item');   // 删除商家详情图（每次1张）
+Route::post('api/shangjia/xiugaishangjianame', 'api/Shangjia/xiugaiMyShangjia_name');              // 修改商家名称
+Route::post('api/shangjia/xiugaishangjiamiaoshu', 'api/Shangjia/xiugaiMyShangjia_miaoshu');        // 修改商家描述
+Route::post('api/shangjia/xiugaishangjiadizhi', 'api/Shangjia/xiugaiMyShangjia_dizhi');            // 修改商家地址
 
+// ----- 编辑商家基本资料 -----
+Route::post('api/shangjia/xiugaishangjiatoutu', 'api/Shangjia/xiugaiMyShangjia_toutu');            // 修改商家头图
+
+// ----- 编辑商家图文详情 -----
+Route::post('api/shangjia/createshangjiaimg', 'api/Shangjia/createShangjiaImg');                   // 新增商家IMG数据（新增商家img表一条数据）
+Route::post('api/shangjia/updateshangjiaimgtext', 'api/Shangjia/updateShangjiaImg_text');          // 修改商家IMG里的text字段
+Route::post('api/shangjia/updateshangjiaimgurl', 'api/Shangjia/updateShangjiaImg_url');            // 修改商家IMG里的url字段
+Route::post('api/shangjia/deleteshangjiaimg', 'api/Shangjia/deleteShangjiaImg');                   // 删除商家IMG数据（删除商家img表一条数据）
 
 
 //app.onError create_App_onError

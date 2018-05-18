@@ -9,16 +9,94 @@
 namespace app\api\controller;
 
 
+use app\api\service\BaseToken;
+use app\api\model\Shangjia as shangjiaModel;
+use app\api\model\Shangjiaimg as shangjiaimgModel;
+use app\api\controller\Cos as cosCon;
+use app\exception\Success;
+
 class Shangjia
 {
 
+    // ------------------ 编辑商家图文详情 -----------------
+
+    // 新增一条商家IMG (img\text)
+    public function createShangjiaImg($params)
+    {
+        /**
+         * $params = { shangjia_id:shangjia_id, url:url, text:text }
+         */
+        $shangjiaimgModel = new shangjiaimgModel();
+        $res = $shangjiaimgModel->create($params);
+        if ($res === false) {
+            //
+        }
+        throw new Success(['data' => $res]);
+    }
+
+    // 单独修改商家IMG表里的text字段
+    public function updateShangjiaImg_text($params)
+    {
+        /**
+         * $params = { id:id, text:text }
+         */
+        $shangjiaimgModel = new shangjiaimgModel();
+        $res = $shangjiaimgModel->where('id', $params['id'])->setField('text', $params['text']);
+        if ($res === false) {
+            //
+        }
+        throw new Success(['data' => $res]);
+    }
+
+    // 单独修改商家IMG表里的url字段 | 修改图片
+    public function updateShangjiaImg_url($params)
+    {
+        /**
+         * $params = { id:id, url:url }
+         */
+        // 先删除以前的图片，再更新新图片
+        $shangjiaimgModel = new shangjiaimgModel();
+        $shangjiaimg = $shangjiaimgModel->where('id', $params['id'])->value('url');
+        if ($shangjiaimg === false) {
+            //
+        }
+
+        // 删除COS图片
+        $cos = new cosCon();
+        $fileName = trim(strrchr($shangjiaimg, '/'), '/');   // 截取最后一个斜杠后面的内容
+        $wenjianjia = "shangjia/";
+        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+        if ($cosdelete['code'] != 0) {
+            // COS有问题
+        }
+
+        // 更新新图片
+        $url = $shangjiaimgModel->where('id', $params['id'])->setField('url', $params['url']);
+        if ($url === false) {
+            //
+        }
+        throw new Success(['data' => $url]);
+    }
+
+
+    // 删除一条商家IMG
+    public function deleteShangjiaImg($id)
+    {
+        $shangjiaimgModel = new shangjiaimgModel();
+        $delete = $shangjiaimgModel->where('id', $id)->delete();
+        if ($delete === false) {
+            //
+        }
+        throw new Success(['data' => $delete]);
+    }
+
+
     // 新增商家
-    public function createShangjia()
+    public function createShangjia($params)
     {
         // 获取user_id
         $uid = BaseToken::get_Token_Uid();
-        // 获取商家参数:name, toutu, phone, dizhi, longitude, latitude, miaoshu
-        $params = input('post.');
+        // 获取商家参数:name, toutu, phone, dizhi, longitude, latitude, miaoshu,form_id
         // 加入用户ID
         $params['user_id'] = $uid;
 
@@ -31,17 +109,17 @@ class Shangjia
     }
 
     // 创建商家图片
-    public function createShangjiaImg()
-    {
-        $params = input('post.');
-
-        $model = new shangjiaimgModel();
-        $res = $model->create($params);
-        if ($res === false) {
-            //
-        }
-        throw new Success(['data' => $res]);
-    }
+//    public function createShangjiaImg()
+//    {
+//        $params = input('post.');
+//
+//        $model = new shangjiaimgModel();
+//        $res = $model->create($params);
+//        if ($res === false) {
+//            //
+//        }
+//        throw new Success(['data' => $res]);
+//    }
 
     // 查询商家详情
     public function findShangjia($id)
@@ -96,57 +174,63 @@ class Shangjia
     }
 
     // ------------------ 修改店铺 -----------------
-    // ------------------ 修改店铺 -----------------
 
     // 删除一张店铺详情图
-    public function deleteMyShangjia_xiangqingtu_item()
-    {
-        $id = input('post.id');
-        $url = input('post.url');
+//    public function deleteMyShangjia_xiangqingtu_item()
+//    {
+//        $id = input('post.id');
+//        $url = input('post.url');
+//
+//        // 准备删除COS
+//        $cos = new cosCon();
+//        $fileName = trim(strrchr($url, '/'), '/');   // 截取最后一个斜杠后面的内容
+//        $wenjianjia = "shangjia/";
+//        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+//        if ($cosdelete['code'] != 0) {
+//            // COS有问题
+//        }
+//
+//        // 删除shangjiaimg表数据
+//        $shangjiaimgModel = new shangjiaimgModel();
+//        $delete = $shangjiaimgModel->where('id', $id)->delete();
+//        if ($delete === false) {
+//            //
+//        }
+//
+//        throw new Success(['data' => $delete]);
+//    }
 
-        // 准备删除COS
+
+
+    // 修改商家头图
+    public function xiugaiMyShangjia_toutu($params)
+    {
+        /**
+         * $params = { shangjia_id:shangjia_id, toutu:toutu }
+         */
+        // 先删除以前的图片，再更新新图片
+        $shangjiaModel = new shangjiaModel();
+        $toutu = $shangjiaModel->where('id', $params['shangjia_id'])->value('toutu');
+        if ($toutu === false) {
+            //
+        }
+        // 删除COS旧图
         $cos = new cosCon();
-        $fileName = trim(strrchr($url, '/'), '/');   // 截取最后一个斜杠后面的内容
+        $fileName = trim(strrchr($toutu, '/'), '/');   // 截取最后一个斜杠后面的内容
         $wenjianjia = "shangjia/";
         $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
         if ($cosdelete['code'] != 0) {
             // COS有问题
         }
 
-        // 删除shangjiaimg表数据
-        $shangjiaimgModel = new shangjiaimgModel();
-        $delete = $shangjiaimgModel->where('id', $id)->delete();
-        if ($delete === false) {
-            //
-        }
-
-        throw new Success(['data' => $delete]);
-    }
-
-    // 修改商家头图
-    public function xiugaiMyShangjia_toutu()
-    {
-        $shangjia_id = input('post.shangjia_id');   // 商家ID
-        $url = input('post.url');                   // 上传的新图url
-        $jiu_toutu = input('post.jiu_toutu');       // 旧图url
-
-        // 更新商家表头图url
-        $model = new shangjiaModel();
-        $res = $model->where('id', $shangjia_id)->setField('toutu', $url);
+        // 更新新图片
+        $res = $shangjiaModel->where('id', $params['shangjia_id'])->setField('toutu', $params['toutu']);
         if ($res === false) {
             //
         }
-
-        // 删除COS旧图
-        $cos = new cosCon();
-        $fileName = trim(strrchr($jiu_toutu, '/'), '/');   // 截取最后一个斜杠后面的内容
-        $wenjianjia = "shangjia/";
-        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
-        if ($cosdelete['code'] != 0) {
-            // COS有问题
-        }
         throw new Success(['data' => $res]);
     }
+
 
     // 修改商家名称
     public function xiugaiMyShangjia_name()
@@ -163,6 +247,7 @@ class Shangjia
         throw new Success(['data' => $update_name]);
     }
 
+
     // 修改商家描述
     public function xiugaiMyShangjia_miaoshu()
     {
@@ -177,6 +262,7 @@ class Shangjia
         }
         throw new Success(['data' => $update_miaoshu]);
     }
+
 
     // 修改商家地址
     public function xiugaiMyShangjia_dizhi()
@@ -195,12 +281,12 @@ class Shangjia
         throw new Success(['data' => $update_dizhi]);
     }
 
+
     // 删除我的店铺
-    public function deleteMyShangjia()
+    public function deleteMyShangjia($id)
     {
         // 接受ID，删除COS详情图，删除COS头图，删除数据
-        $id = input('post.id');
-        // 根据商家ID查询商家图片表
+        // 根据商家ID查询商家IMG表
         $imgModel = new shangjiaimgModel();
         $imgArray = $imgModel->where('shangjia_id', $id)->select();
         if ($imgArray === false) {
@@ -222,8 +308,8 @@ class Shangjia
         $fileName = trim(strrchr($shangjia['toutu'], '/'), '/');   // 截取最后一个斜杠后面的内容
         $wenjianjia = "shangjia/";
         $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
-        if ($cosdelete['code'] == 0) {
-            // 删除头图成功
+        if ($cosdelete['code'] != 0) {
+            //
         }
 
         // 删除商家数据
@@ -235,6 +321,7 @@ class Shangjia
         throw new Success(['data' => $deleteShangjia]);
     }
 
+
     // 遍历删除商家COS图片和IMG表数据
     public function forDelete_ShangjiaCos($imgArray)
     {
@@ -244,6 +331,9 @@ class Shangjia
             $fileName = trim(strrchr($imgArray[0]['url'], '/'), '/');   // 截取最后一个斜杠后面的内容
             $wenjianjia = "shangjia/";
             $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+            if($cosdelete["code"] != 0){
+                //
+            }
 
             // COS返回成功，继续删除商家IMG表
             $imgModel = new shangjiaimgModel();
