@@ -157,7 +157,7 @@ class Xinxi
     {
         $id = input('post.id');
         $model = new bianminlistModel();
-        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu', rand(1, 5));
+        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu', rand(1, 3));
 
         if ($liulangcishu === false) {
             // 增加流浪次数失败了

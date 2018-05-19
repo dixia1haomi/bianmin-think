@@ -18,80 +18,7 @@ use app\exception\Success;
 class Shangjia
 {
 
-    // ------------------ 编辑商家图文详情 -----------------
-
-    // 新增一条商家IMG (img\text)
-    public function createShangjiaImg($params)
-    {
-        /**
-         * $params = { shangjia_id:shangjia_id, url:url, text:text }
-         */
-        $shangjiaimgModel = new shangjiaimgModel();
-        $res = $shangjiaimgModel->create($params);
-        if ($res === false) {
-            //
-        }
-        throw new Success(['data' => $res]);
-    }
-
-    // 单独修改商家IMG表里的text字段
-    public function updateShangjiaImg_text($params)
-    {
-        /**
-         * $params = { id:id, text:text }
-         */
-        $shangjiaimgModel = new shangjiaimgModel();
-        $res = $shangjiaimgModel->where('id', $params['id'])->setField('text', $params['text']);
-        if ($res === false) {
-            //
-        }
-        throw new Success(['data' => $res]);
-    }
-
-    // 单独修改商家IMG表里的url字段 | 修改图片
-    public function updateShangjiaImg_url($params)
-    {
-        /**
-         * $params = { id:id, url:url }
-         */
-        // 先删除以前的图片，再更新新图片
-        $shangjiaimgModel = new shangjiaimgModel();
-        $shangjiaimg = $shangjiaimgModel->where('id', $params['id'])->value('url');
-        if ($shangjiaimg === false) {
-            //
-        }
-
-        // 删除COS图片
-        $cos = new cosCon();
-        $fileName = trim(strrchr($shangjiaimg, '/'), '/');   // 截取最后一个斜杠后面的内容
-        $wenjianjia = "shangjia/";
-        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
-        if ($cosdelete['code'] != 0) {
-            // COS有问题
-        }
-
-        // 更新新图片
-        $url = $shangjiaimgModel->where('id', $params['id'])->setField('url', $params['url']);
-        if ($url === false) {
-            //
-        }
-        throw new Success(['data' => $url]);
-    }
-
-
-    // 删除一条商家IMG
-    public function deleteShangjiaImg($id)
-    {
-        $shangjiaimgModel = new shangjiaimgModel();
-        $delete = $shangjiaimgModel->where('id', $id)->delete();
-        if ($delete === false) {
-            //
-        }
-        throw new Success(['data' => $delete]);
-    }
-
-
-    // 新增商家
+    // ---------------------------------- 新增店铺 ----------------------------------
     public function createShangjia($params)
     {
         // 获取user_id
@@ -108,20 +35,9 @@ class Shangjia
         throw new Success(['data' => $res]);
     }
 
-    // 创建商家图片
-//    public function createShangjiaImg()
-//    {
-//        $params = input('post.');
-//
-//        $model = new shangjiaimgModel();
-//        $res = $model->create($params);
-//        if ($res === false) {
-//            //
-//        }
-//        throw new Success(['data' => $res]);
-//    }
 
-    // 查询商家详情
+
+    // ---------------------------------- 查询商家详情 ----------------------------------
     public function findShangjia($id)
     {
         $model = new shangjiaModel();
@@ -140,7 +56,7 @@ class Shangjia
         throw new Success(['data' => $data]);
     }
 
-    // 查询商家列表
+    // ---------------------------------- 查询商家列表 ----------------------------------
     public function selectShangjia()
     {
         $model = new shangjiaModel();
@@ -148,9 +64,9 @@ class Shangjia
         $page = input('post.page');
         // 如果传了page分页就不限制limit,limit限制用于首页展示10个商家，不想再分一个API了
         if ($page) {
-            $data = $model->select();
+            $data = $model->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 20)->select();
         } else {
-            $data = $model->limit(10)->select();
+            $data = $model->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->limit(10)->select();
         }
 
         if ($data === false) {
@@ -159,7 +75,9 @@ class Shangjia
         throw new Success(['data' => $data]);
     }
 
-    // 查询我的店铺
+
+
+    // ---------------------------------- 查询我的店铺 ----------------------------------
     public function getMyShangjia()
     {
         $uid = BaseToken::get_Token_Uid();
@@ -169,116 +87,7 @@ class Shangjia
         if ($res === false) {
             //
         }
-
         throw new Success(['data' => $res]);
-    }
-
-    // ------------------ 修改店铺 -----------------
-
-    // 删除一张店铺详情图
-//    public function deleteMyShangjia_xiangqingtu_item()
-//    {
-//        $id = input('post.id');
-//        $url = input('post.url');
-//
-//        // 准备删除COS
-//        $cos = new cosCon();
-//        $fileName = trim(strrchr($url, '/'), '/');   // 截取最后一个斜杠后面的内容
-//        $wenjianjia = "shangjia/";
-//        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
-//        if ($cosdelete['code'] != 0) {
-//            // COS有问题
-//        }
-//
-//        // 删除shangjiaimg表数据
-//        $shangjiaimgModel = new shangjiaimgModel();
-//        $delete = $shangjiaimgModel->where('id', $id)->delete();
-//        if ($delete === false) {
-//            //
-//        }
-//
-//        throw new Success(['data' => $delete]);
-//    }
-
-
-
-    // 修改商家头图
-    public function xiugaiMyShangjia_toutu($params)
-    {
-        /**
-         * $params = { shangjia_id:shangjia_id, toutu:toutu }
-         */
-        // 先删除以前的图片，再更新新图片
-        $shangjiaModel = new shangjiaModel();
-        $toutu = $shangjiaModel->where('id', $params['shangjia_id'])->value('toutu');
-        if ($toutu === false) {
-            //
-        }
-        // 删除COS旧图
-        $cos = new cosCon();
-        $fileName = trim(strrchr($toutu, '/'), '/');   // 截取最后一个斜杠后面的内容
-        $wenjianjia = "shangjia/";
-        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
-        if ($cosdelete['code'] != 0) {
-            // COS有问题
-        }
-
-        // 更新新图片
-        $res = $shangjiaModel->where('id', $params['shangjia_id'])->setField('toutu', $params['toutu']);
-        if ($res === false) {
-            //
-        }
-        throw new Success(['data' => $res]);
-    }
-
-
-    // 修改商家名称
-    public function xiugaiMyShangjia_name()
-    {
-        $shangjia_id = input('post.shangjia_id');   // 商家ID
-        $name = input('post.name');                 // 新名称
-
-        // 更新商家表头图url
-        $model = new shangjiaModel();
-        $update_name = $model->where('id', $shangjia_id)->setField('name', $name);
-        if ($update_name === false) {
-            //
-        }
-        throw new Success(['data' => $update_name]);
-    }
-
-
-    // 修改商家描述
-    public function xiugaiMyShangjia_miaoshu()
-    {
-        $shangjia_id = input('post.shangjia_id');   // 商家ID
-        $miaoshu = input('post.miaoshu');                 // 新名称
-
-        // 更新商家表头图url
-        $model = new shangjiaModel();
-        $update_miaoshu = $model->where('id', $shangjia_id)->setField('miaoshu', $miaoshu);
-        if ($update_miaoshu === false) {
-            //
-        }
-        throw new Success(['data' => $update_miaoshu]);
-    }
-
-
-    // 修改商家地址
-    public function xiugaiMyShangjia_dizhi()
-    {
-        $shangjia_id = input('post.shangjia_id');   // 商家ID
-        $dizhi = input('post.dizhi');               // 新地址
-        $longitude = input('post.longitude');       // 新经度
-        $latitude = input('post.latitude');         // 新纬度
-
-        // 更新商家地址,经度，纬度
-        $model = new shangjiaModel();
-        $update_dizhi = $model->where('id', $shangjia_id)->update(['dizhi' => $dizhi, 'longitude' => $longitude, 'latitude' => $latitude]);
-        if ($update_dizhi === false) {
-            //
-        }
-        throw new Success(['data' => $update_dizhi]);
     }
 
 
@@ -353,4 +162,153 @@ class Shangjia
             return true;
         }
     }
+
+
+    // ----------------------------------- 编辑商家图文详情 ----------------------------------
+
+    // 新增一条商家IMG (img\text)
+    public function createShangjiaImg($params)
+    {
+        /**
+         * $params = { shangjia_id:shangjia_id, url:url, text:text }
+         */
+        $shangjiaimgModel = new shangjiaimgModel();
+        $res = $shangjiaimgModel->create($params);
+        if ($res === false) {
+            //
+        }
+        throw new Success(['data' => $res]);
+    }
+
+
+    // 删除一条商家IMG
+    public function deleteShangjiaImg($id)
+    {
+        $shangjiaimgModel = new shangjiaimgModel();
+        $delete = $shangjiaimgModel->where('id', $id)->delete();
+        if ($delete === false) {
+            //
+        }
+        throw new Success(['data' => $delete]);
+    }
+
+
+    // 单独修改商家IMG表里的text字段
+    public function updateShangjiaImg_text($params)
+    {
+        /**
+         * $params = { id:id, text:text }
+         */
+        $shangjiaimgModel = new shangjiaimgModel();
+        $res = $shangjiaimgModel->where('id', $params['id'])->setField('text', $params['text']);
+        if ($res === false) {
+            //
+        }
+        throw new Success(['data' => $res]);
+    }
+
+    // 单独修改商家IMG表里的url字段 | 修改图片
+    public function updateShangjiaImg_url($params)
+    {
+        /**
+         * $params = { id:id, url:url }
+         */
+        // 先删除以前的图片，再更新新图片
+        $shangjiaimgModel = new shangjiaimgModel();
+        $shangjiaimg = $shangjiaimgModel->where('id', $params['id'])->value('url');
+        if ($shangjiaimg === false) {
+            //
+        }
+
+        // 删除COS图片
+        $cos = new cosCon();
+        $fileName = trim(strrchr($shangjiaimg, '/'), '/');   // 截取最后一个斜杠后面的内容
+        $wenjianjia = "shangjia/";
+        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+        if ($cosdelete['code'] != 0) {
+            // COS有问题
+        }
+
+        // 更新新图片
+        $url = $shangjiaimgModel->where('id', $params['id'])->setField('url', $params['url']);
+        if ($url === false) {
+            //
+        }
+        throw new Success(['data' => $url]);
+    }
+
+
+
+
+
+
+
+    // ----------------------------------- 编辑商家基本资料 ----------------------------------
+
+    // 修改商家头图
+    public function xiugaiMyShangjia_toutu($params)
+    {
+        /**
+         * $params = { shangjia_id:shangjia_id, toutu:toutu }
+         */
+        // 先删除以前的图片，再更新新图片
+        $shangjiaModel = new shangjiaModel();
+        $toutu = $shangjiaModel->where('id', $params['shangjia_id'])->value('toutu');
+        if ($toutu === false) {
+            //
+        }
+        // 删除COS旧图
+        $cos = new cosCon();
+        $fileName = trim(strrchr($toutu, '/'), '/');   // 截取最后一个斜杠后面的内容
+        $wenjianjia = "shangjia/";
+        $cosdelete = $cos->cosdelete($wenjianjia, $fileName);
+        if ($cosdelete['code'] != 0) {
+            // COS有问题
+        }
+
+        // 更新新图片
+        $res = $shangjiaModel->where('id', $params['shangjia_id'])->setField('toutu', $params['toutu']);
+        if ($res === false) {
+            //
+        }
+        throw new Success(['data' => $res]);
+    }
+
+
+    // 修改商家名称
+    public function xiugaiMyShangjia_name()
+    {
+        $shangjia_id = input('post.shangjia_id');   // 商家ID
+        $name = input('post.name');                 // 新名称
+
+        // 更新商家表头图url
+        $model = new shangjiaModel();
+        $update_name = $model->where('id', $shangjia_id)->setField('name', $name);
+        if ($update_name === false) {
+            //
+        }
+        throw new Success(['data' => $update_name]);
+    }
+
+
+
+    // 修改商家地址
+    public function xiugaiMyShangjia_dizhi()
+    {
+        $shangjia_id = input('post.shangjia_id');   // 商家ID
+        $dizhi = input('post.dizhi');               // 新地址
+        $longitude = input('post.longitude');       // 新经度
+        $latitude = input('post.latitude');         // 新纬度
+
+        // 更新商家地址,经度，纬度
+        $model = new shangjiaModel();
+        $update_dizhi = $model->where('id', $shangjia_id)->update(['dizhi' => $dizhi, 'longitude' => $longitude, 'latitude' => $latitude]);
+        if ($update_dizhi === false) {
+            //
+        }
+        throw new Success(['data' => $update_dizhi]);
+    }
+
+
+
 }
