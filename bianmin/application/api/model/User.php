@@ -18,18 +18,23 @@ class User extends Model
     // 通过openid查询用户是否存在
     public static function getByOpenid($openid)
     {
-        return self::where('openid', $openid)->find();
+        $user = self::where('openid', $openid)->find();
+        if ($user === false) {
+            throw new QueryDbException(['msg' => 'getByOpenid']);
+        }
+        return $user;
     }
 
-    // 新增用户
+    // 没得用户，新增用户
     public static function create_user($openid)
     {
         $user = self::create(['openid' => $openid]);
         if ($user === false) {
-            //
+            throw new QueryDbException(['msg' => 'create_user']);
         }
         return $user->id;
     }
+
 
     // 登陆
     public static function saveUserinfoModel($info, $uid)
@@ -43,6 +48,9 @@ class User extends Model
             'form_id' => $info['form_id']
         ], ['id' => $uid]);
 
+        if($res === false){
+            throw new QueryDbException(['msg' => 'saveUserinfoModel']);
+        }
         return $res;
     }
 

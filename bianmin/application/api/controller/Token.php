@@ -70,7 +70,7 @@ class Token
         }
 
         // 检查formID
-        if (empty($user['form_id'])) {
+        if ($user['form_id'] === '') {
             // form_id为空，设置登陆态为false
             $loginState = false;
         } else {

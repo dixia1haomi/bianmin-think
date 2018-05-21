@@ -9,6 +9,7 @@
 namespace app\api\service;
 
 
+use app\exception\QueryDbException;
 use app\exception\Success;
 use app\exception\TokenException;
 use app\exception\WeChatException;
@@ -62,8 +63,15 @@ class UserToken
         //有->生成令牌，缓存令牌数据.
         //返回令牌给客户端
         $openid = $wxResult['openid'];
+        // 处理用户数据
         $user = UserModel::getByOpenid($openid);
         if ($user) {
+            // 增加访问量
+            $inc = $user->setInc('fangwen',1);
+            if($inc === false){
+                throw new QueryDbException(['msg'=>'grantToken增加访问量']);
+            }
+
             $uid = $user->id;
         } else {
             $uid = UserModel::create_user($openid); // 携带openid和用户信息去创建用户
@@ -100,26 +108,13 @@ class UserToken
         $userModel = new UserModel();
         $user = $userModel->where('id', $uid)->find();
         if ($user === false) {
-            //
+            throw new QueryDbException(['msg'=>'checkformId']);
         }
-
-        // 检查formID
-        if (empty($user['form_id'])) {
-            // form_id为空，设置登陆态为false
+        // 设置登录态
+        if($user['form_id'] === ''){
             $loginState = false;
-        } else {
-            // 有form_id，检查是否过期
-            $dt = time();           // 当前时间
-            $update_time = strtotime($user['update_time']);
-            $ShiJianCha = $dt - $update_time;
-
-            if ($ShiJianCha > 604800) {
-                // 大于7天过期，设置登陆态为false
-                $loginState = false;
-            } else {
-                // form_id有效，设置登陆态为true
-                $loginState = true;
-            }
+        }else{
+            $loginState = true;
         }
         return $loginState;
     }

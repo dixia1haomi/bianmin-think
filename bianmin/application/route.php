@@ -70,6 +70,7 @@ Route::post('api/shangjia/findshangjia', 'api/Shangjia/findShangjia');          
 Route::post('api/shangjia/selectshangjia', 'api/Shangjia/selectShangjia');                         // 查询商家列表
 Route::post('api/shangjia/myshangjia', 'api/Shangjia/getMyShangjia');                              // 我的店铺
 Route::post('api/shangjia/deleteshangjia', 'api/Shangjia/deleteMyShangjia');                       // 删除店铺
+Route::post('api/shangjia/shuaxin', 'api/Shangjia/shangJiaShuaXin');                               // 刷新
 
 
 // ----- 编辑商家基本资料 -----
@@ -103,4 +104,7 @@ Route::post('api/crontab/deletebianmin', 'api/Crontab/crontab_Delete_BianMin'); 
 Route::post('api/crontab/checkuserformid', 'api/Crontab/crontab_CheckUserFormId');                  // 检查user表formId
 Route::post('api/crontab/checkbianminlistformid', 'api/Crontab/crontab_CheckBianMinListFormId');    // 检查便民信息表formId
 Route::post('api/crontab/checkliuyanformid', 'api/Crontab/crontab_CheckLiuYanFormId');              // 检查留言表formId
+
+// 商家
+Route::post('api/crontab/shangjiashuaxin', 'api/Crontab/crontab_ShangJia_ShuaXin');
 

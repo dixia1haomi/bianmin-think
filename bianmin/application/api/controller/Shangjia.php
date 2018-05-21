@@ -13,6 +13,7 @@ use app\api\service\BaseToken;
 use app\api\model\Shangjia as shangjiaModel;
 use app\api\model\Shangjiaimg as shangjiaimgModel;
 use app\api\controller\Cos as cosCon;
+use app\exception\QueryDbException;
 use app\exception\Success;
 
 class Shangjia
@@ -88,6 +89,17 @@ class Shangjia
             //
         }
         throw new Success(['data' => $res]);
+    }
+
+
+    // ---------------------------------- 刷新我的店铺 ----------------------------------
+    public function shangJiaShuaXin()
+    {
+        $shangjia = shangjiaModel::update(['form_id' => input('post.form_id')], ['id' => input('post.id')]);
+        if ($shangjia === false) {
+            throw new QueryDbException(['msg'=>'刷新我的店铺更新form_id和update_time失败，shangJiaShuaXin']);
+        }
+        throw new Success(['data' => $shangjia]);
     }
 
 

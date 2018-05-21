@@ -10,11 +10,12 @@ namespace app\api\controller;
 
 use app\api\model\Bianminlist as bianminlistModel;
 use app\api\model\User as userModel;
-use app\api\model\Liuyan as liuyanModel;
 use app\api\model\UserGuoqiJilu as userguoqijiluModel;
 use app\api\model\BmxxShuaxinJilu as bmxxshuaxinjiluModel;
+use app\api\model\Shangjia as shangjiaModel;
 
 use app\api\service\mobanxiaoxi\BianminShuaXinMoban;
+use app\api\service\mobanxiaoxi\ShangjiaShuaXinMoban;
 use app\api\service\mobanxiaoxi\UserguoqiMoban;
 use app\exception\QueryDbException;
 use app\exception\Success;
@@ -26,16 +27,78 @@ class Crontab
     //                 2. 删除便民信息数据 = update_time超过30天 （有顶置状态的不删除）
     //                 3. 检查formId过期
 
-    // -------------------------------------------------- 更改便民信息表顶置状态 --------------------------------------------------
 
-    // 1. 更改便民信息表顶置状态为0 = 当前时间 > 顶置时间
+    // -------------------------------------------------- 用户 --------------------------------------------------
+    // -------------------------------------------------- 用户 --------------------------------------------------
+    // -------------------------------------------------- 用户 --------------------------------------------------
+
+    // ---------------------- 6天回访提醒/活动提醒 ----------------------
+
+    public function crontab_CheckUserFormId()
+    {
+        // 查询有formid的用户
+        $userModel = new userModel();
+        // not between 不在 当前时间至6天以前的这个范围 查询 （只查询6天以外的数据）
+
+        $time_6 = time() - (60 * 60 * 24 * 6);   // 6天以前
+        $user = $userModel->where('form_id', '<>', '')->whereTime('update_time', '<', $time_6)->limit(3)->select();
+        if ($user === false) {
+            throw new QueryDbException(['msg' => 'crontab用户7天回访提醒crontab_CheckUserFormId']);
+        }
+
+        if (count($user) > 0) {
+            foreach ($user as $key => $value) {
+                $this->sendUserMoban($value);
+            }
+        }
+    }
+
+    private function sendUserMoban($value)
+    {
+        // 发送模板消息
+        $mobanxiaoxi = new UserguoqiMoban();
+        $backMsg = $mobanxiaoxi->sendUserGuoQiMessage($value);
+        // 记录
+        $userModel = new userModel();
+
+        if ($backMsg['errcode'] == 0) {
+            // 发送成功
+            $user = $userModel->where('id', $value['id'])->update(['form_state' => 1, 'form_id' => '']);
+            if ($user === false) {
+                throw new QueryDbException(['msg' => 'crontab用户7天回访提醒发送成功记录数据库失败sendUserMoban']);
+            }
+        } else {
+            // 发送失败记录日志
+            Log::init([
+                'type' => 'File',
+                'path' => LOG_PATH_CTONTAB_USER_FORMID,   // 自定义的日志文件路径
+            ]);
+            Log::record('用户回访提醒发送失败，用户ID---' . $value['id'] . '错误原因---' . $backMsg['errmsg'], 'info');
+            // 记录数据库
+            $user = $userModel->where('id', $value['id'])->update(['form_state' => -1, 'form_id' => '']);
+            if ($user === false) {
+                throw new QueryDbException(['msg' => 'crontab用户7天回访提醒发送失败记录数据库失败sendUserMoban']);
+            }
+        }
+    }
+
+
+
+
+    // -------------------------------------------------- 信息 --------------------------------------------------
+    // -------------------------------------------------- 信息 --------------------------------------------------
+    // -------------------------------------------------- 信息 --------------------------------------------------
+
+
+    // ---------------------- 检查顶置状态 ----------------------
+
     public function crontab_Check_BianMin_Dingzhi_state()
     {
         // 查询所有已顶置的信息判断dingzhi_time是否到期，到期的更改顶置状态并清空dingzhi_time
         $bianminlistModel = new bianminlistModel();
         $dingzhi = $bianminlistModel->where('dingzhi_state', 1)->select();
         if ($dingzhi === false) {
-            throw new QueryDbException(['msg'=>'crontab更改便民信息表顶置状态crontab_Check_BianMin_Dingzhi_state']);
+            throw new QueryDbException(['msg' => 'crontab更改便民信息表顶置状态crontab_Check_BianMin_Dingzhi_state']);
         }
 
         // 如果有数据
@@ -55,7 +118,6 @@ class Crontab
             'type' => 'File',
             'path' => LOG_PATH_CTONTAB_DINGZHI_STATE,   // 自定义的日志文件路径
         ]);
-
         // 当前时间
         $time = time();
         // 如果：当前时间 > 顶置时间 取消这条信息的顶置状态
@@ -63,26 +125,24 @@ class Crontab
             $bianminlistModel = new bianminlistModel();
             $over = $bianminlistModel->where('id', $value['id'])->setField(['dingzhi_state' => 0, 'dingzhi_time' => 0]);
             if ($over === false) {
-                throw new QueryDbException(['msg'=>'crontab更改便民信息表顶置状态check_Dingzhi_time']);
+                throw new QueryDbException(['msg' => 'crontab更改便民信息表顶置状态check_Dingzhi_time']);
             }
             Log::record('更改了ID为' . $value['id'] . '信息顶置状态', 'info');
         }
     }
 
 
-    // -------------------------------------------------- 超过30天删除便民信息 --------------------------------------------------
+    // ---------------------- 超过30天删除信息(每小时执行) ----------------------
 
-    // 2. 删除便民信息数据 = update_time超过30天 （有顶置状态的不删除）
     public function crontab_Delete_BianMin()
     {
-        // 查询没有顶置并且update_time在一个月之后的便民信息
+        // 删除便民信息数据 = update_time超过30天 （有顶置状态的不删除）
         $bianminlistModel = new bianminlistModel();
-        // not between 不在 当前时间至30天以前的这个范围 查询 （只查询30天以外的数据）
-        $time = time();
-        $time_30 = $time - (60 * 60 * 24 * 30);
-        $nodingzhi = $bianminlistModel->where('dingzhi_state', '<>', 1)->whereTime('update_time', 'not between', [$time_30, $time])->select();
+        // 30天以前的一个时间
+        $time_30 = time() - (60 * 60 * 24 * 30);
+        $nodingzhi = $bianminlistModel->where('dingzhi_state', '<>', 1)->whereTime('update_time', '<', $time_30)->limit(1)->select();
         if ($nodingzhi === false) {
-            throw new QueryDbException(['msg'=>'crontab超过30天删除便民信息crontab_Delete_BianMin']);
+            throw new QueryDbException(['msg' => 'crontab超过30天删除便民信息crontab_Delete_BianMin']);
         }
 
         // 如果有数据
@@ -109,158 +169,116 @@ class Crontab
         Log::record('删除了ID为' . $value['id'] . '的信息', 'info');
     }
 
-    // ----------------------------------------------- 用户7天回访提醒 -----------------------------------------------
 
-    // 3. 检查formId过期,有form_id的表3张：user - bianminlist - liuyan | 3个计划任务分别检查3张表
+    //  ---------------------- 3天后提醒信息刷新(每10分钟执行) ----------------------
 
-    public function crontab_CheckUserFormId()
-    {
-        // 查询有formid的用户
-        $userModel = new userModel();
-        // not between 不在 当前时间至6天以前的这个范围 查询 （只查询6天以外的数据）
-        $time = time();
-        $time_6 = $time - (60 * 60 * 24 * 6);   // 6天以外
-        $user = $userModel->where('form_id', '<>', '')->whereTime('update_time', 'not between', [$time_6, $time])->select();
-        if ($user === false) {
-            throw new QueryDbException(['msg'=>'crontab用户7天回访提醒crontab_CheckUserFormId']);
-        }
-
-
-        if (count($user) > 0) {
-            foreach ($user as $key => $value) {
-                $mobanxiaoxi = new UserguoqiMoban();
-                // 发送消息
-                $backMsg = $mobanxiaoxi->sendUserGuoQiMessage($value);     // $backMsg返回成功或失败的字符串
-                // 记录执行情况并删除formid
-                $this->userGuoQiJiLu($backMsg, $value);
-            }
-        }
-    }
-
-    private function userGuoQiJiLu($backMsg, $value)
-    {
-        // 开启日志记录
-        Log::init([
-            'type' => 'File',
-            'path' => LOG_PATH_CTONTAB_USER_FORMID,   // 自定义的日志文件路径
-        ]);
-
-        $userguoqijiluModel = new userguoqijiluModel();
-
-        // 模板消息成功失败判断
-        if ($backMsg['errcode'] == 0) {
-            $msg = '模板消息发送成功';
-            // 记录到数据库
-            $user = $userguoqijiluModel->create(['user_id' => $value['id'], 'state' => 1]);
-            if ($user === false) {
-                throw new QueryDbException(['msg'=>'crontab用户7天回访提醒userGuoQiJiLu-1']);
-            }
-        } else {
-            $user = $userguoqijiluModel->create(['user_id' => $value['id'], 'state' => 0]);
-            if ($user === false) {
-                throw new QueryDbException(['msg'=>'crontab用户7天回访提醒userGuoQiJiLu-0']);
-            }
-            $msg = '模板消息发送失败,' . $backMsg['errmsg'];
-        }
-
-        //
-        Log::record($value['nick_name'] . '---' . $msg . '---' . '用户ID' . '---' . $value['id'], 'info');
-
-        // 清空user表用户的form_id
-        $this->deleteUserFormID($value['id']);
-    }
-
-    // 清空user表用户的form_id
-    private function deleteUserFormID($id)
-    {
-        $userModel = new userModel();
-        $user = $userModel->where('id', $id)->setField('form_id', '');
-        if ($user === false) {
-            throw new QueryDbException(['msg'=>'crontab用户7天回访提醒清空user表用户的form_id']);
-        }
-        return;
-    }
-
-
-    // ------------------------------------- 便民信息刷新提醒 -------------------------------------
-
-    // 便民信息消息推送场景：1.form_id到期提醒刷新推送 |  2.留言推送（留言接口处已实现）
     public function crontab_CheckBianMinListFormId()
     {
         // form_id到期提醒刷新推送，查询有formid的便民信息
         $bianminlistModel = new bianminlistModel();
 
-        // 查询formid不为空并且是7天以内更新的
-        $time = time();
-        $time_6 = $time - (60 * 60 * 24 * 3);    // 6天前以外
-        $bianmin = $bianminlistModel->where('form_id', '<>', '')->whereTime('update_time', 'not between', [$time_6, $time])->select();
+        $time3 = time() - (60 * 60 * 24 * 3);    // 3天前以外
+        $bianmin = $bianminlistModel->where('form_id', '<>', '')->whereTime('update_time', '<', $time3)->limit(3)->select();
         if ($bianmin === false) {
-            throw new QueryDbException(['msg'=>'crontab便民信息刷新提醒crontab_CheckBianMinListFormId']);
+            throw new QueryDbException(['msg' => 'crontab便民信息刷新提醒查询失败crontab_CheckBianMinListFormId']);
         }
 
         if (count($bianmin) > 0) {
             foreach ($bianmin as $key => $value) {
-                $mobanxiaoxi = new BianminShuaXinMoban();
-                // 发送消息
-                $backMsg = $mobanxiaoxi->sendBianminXinxiShuaxinMessage($value);     // $backMsg返回成功或失败的字符串
-                // 记录执行情况并删除formid
-                $this->bianminShuaxinJiLu($backMsg, $value);
+                $this->sendXinXiShuaxin($value);
             }
         }
 
     }
 
-    private function bianminShuaxinJiLu($backMsg, $value)
+    private function sendXinXiShuaxin($value)
     {
-        // 开启日志记录
-        Log::init([
-            'type' => 'File',
-            'path' => LOG_PATH_CTONTAB_BIANMINSHUAXIN_FORMID,   // 自定义的日志文件路径
-        ]);
+        // 发送模板消息
+        $mobanxiaoxi = new BianminShuaXinMoban();
+        $backMsg = $mobanxiaoxi->sendBianminXinxiShuaxinMessage($value);
+        // 记录
+        $bianminlistModel = new bianminlistModel();
 
-        $bmxxshuaxinjiluModel = new bmxxshuaxinjiluModel();
-
-        // 模板消息成功失败判断
         if ($backMsg['errcode'] == 0) {
-            $msg = '模板消息发送成功';
-
-            // 记录到数据库
-            $bianmin = $bmxxshuaxinjiluModel->create(['user_id' => $value['user_id'], 'state' => 1]);
+            // 发送成功
+            $bianmin = $bianminlistModel->where('id', $value['id'])->update(['form_state' => 1, 'form_id' => '']);
             if ($bianmin === false) {
-                throw new QueryDbException(['msg'=>'crontab便民信息刷新提醒bianminShuaxinJiLu-1']);
+                throw new QueryDbException(['msg' => 'crontab信息刷新模板消息发送成功后写入数据库时失败sendXinXiShuaxin']);
             }
         } else {
-            $msg = '模板消息发送失败,' . $backMsg['errmsg'];
-
-            $bianmin = $bmxxshuaxinjiluModel->create(['user_id' => $value['user_id'], 'state' => 0]);
+            // 发送失败记录日志
+            Log::init([
+                'type' => 'File',
+                'path' => LOG_PATH_CTONTAB_BIANMINSHUAXIN_FORMID,   // 自定义的日志文件路径
+            ]);
+            Log::record('信息刷新模板消息发送失败，信息ID---' . $value['id'] . '错误原因---' . $backMsg['errmsg'], 'info');
+            // 更新信息表
+            $bianmin = $bianminlistModel->where('id', $value['id'])->update(['form_state' => -1, 'form_id' => '']);
             if ($bianmin === false) {
-                throw new QueryDbException(['msg'=>'crontab便民信息刷新提醒bianminShuaxinJiLu-0']);
+                throw new QueryDbException(['msg' => 'crontab信息刷新模板消息发送失败后写入数据库时失败sendXinXiShuaxin']);
             }
         }
-
-        //
-        Log::record('信息ID' . '---' . $value['user_id'] . '---' . $msg, 'info');
-
-        // 清空便民信息表的form_id
-        $this->deleteBianminFormID($value['id']);
     }
 
-    // 清空便民信息表的form_id
-    private function deleteBianminFormID($id)
+
+
+
+
+    // -------------------------------------------------- 商家 --------------------------------------------------
+    // -------------------------------------------------- 商家 --------------------------------------------------
+    // -------------------------------------------------- 商家 --------------------------------------------------
+
+    //  ---------------------- 3天后提醒商家刷新(每30分钟执行) ----------------------
+    public function crontab_ShangJia_ShuaXin()
     {
-        $bianminlistModel = new bianminlistModel();
-        $bianmin = $bianminlistModel->where('id', $id)->setField('form_id', '');
-        if ($bianmin === false) {
-            throw new QueryDbException(['msg'=>'crontab便民信息刷新提醒deleteBianminFormID']);
+        // 查询3天前更新的商家
+//        $time3 = time() - (60 * 60 * 24 * 3);
+        $time3 = time() - (60 * 1);
+
+        $shangjiaModel = new shangjiaModel();
+        $shangjia = $shangjiaModel->where('form_id', '<>', '')->whereTime('update_time', '<', $time3)->limit(3)->select();
+        if ($shangjia === false) {
+            //
         }
-        return;
+
+        // 如果有数据
+        if (count($shangjia) > 0) {
+            foreach ($shangjia as $key => $value) {
+                // 发送模板消息
+                $this->seedShangjiaShuaxinMoban($value);
+            }
+        }
     }
 
-
-    // ------------------------------------- 检查liuyan表 -------------------------------------
-    public function crontab_CheckLiuYanFormId()
+    private function seedShangjiaShuaxinMoban($value)
     {
+        // 发送模板消息
+        $mobanxiaoxi = new ShangjiaShuaXinMoban();
+        $backMsg = $mobanxiaoxi->sendShangjiaShuaxinMessage($value);
+        // 记录
+        $shangjiaModel = new shangjiaModel();
 
+        if ($backMsg['errcode'] == 0) {
+            // 发送成功
+            $res = $shangjiaModel->where('id', $value['id'])->update(['form_state' => 1, 'form_id' => '']);
+            if ($res === false) {
+                throw new QueryDbException(['msg' => 'crontab商家刷新模板消息发送成功后写入数据库时失败seedShangjiaShuaxinMoban']);
+            }
+        } else {
+            // 发送失败记录日志
+            Log::init([
+                'type' => 'File',
+                'path' => LOG_PATH_SHANGJIA_SHUAXIN,   // 自定义的日志文件路径
+            ]);
+            Log::record('商家刷新模板消息发送失败，商家ID---' . $value['id'] .'用户ID---'.$value['user_id']. '错误原因---' . $backMsg['errmsg'], 'info');
+
+            // 更新商家表
+            $res = $shangjiaModel->where('id', $value['id'])->update(['form_state' => -1, 'form_id' => '']);
+            if ($res === false) {
+                throw new QueryDbException(['msg' => 'crontab商家刷新模板消息发送失败后写入数据库时失败seedShangjiaShuaxinMoban']);
+            }
+        }
     }
+
 
 }
