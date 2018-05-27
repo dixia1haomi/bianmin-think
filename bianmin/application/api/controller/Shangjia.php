@@ -43,13 +43,13 @@ class Shangjia
     {
         $model = new shangjiaModel();
 
-        $data = $model->with(['withshangjiaImg'])->find($id);
+        $data = $model->with(['withshangjiaImg','withFabuhuodong'])->find($id);
         if ($data === false) {
             //
         }
 
         // 查询商家详情就增加点击量
-        $liulangcishu = $model->where(['id' => $id])->setInc('liulangcishu');
+        $liulangcishu = $data->setInc('liulangcishu');
         if ($liulangcishu === false) {
             // 增加流浪次数失败了
         }
@@ -65,9 +65,9 @@ class Shangjia
         $page = input('post.page');
         // 如果传了page分页就不限制limit,limit限制用于首页展示10个商家，不想再分一个API了
         if ($page) {
-            $data = $model->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 20)->select();
+            $data = $model->with(['withFabuhuodong'])->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 20)->select();
         } else {
-            $data = $model->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->limit(10)->select();
+            $data = $model->with(['withFabuhuodong'])->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->limit(10)->select();
         }
 
         if ($data === false) {
@@ -134,17 +134,16 @@ class Shangjia
         }
 
         // 删除商家数据
-        $deleteShangjia = $shangjiaModel->where('id', $id)->delete();
+        $deleteShangjia = $shangjia->delete();
         if ($deleteShangjia === false) {
             // 删除失败
         }
-
         throw new Success(['data' => $deleteShangjia]);
     }
 
 
     // 遍历删除商家COS图片和IMG表数据
-    public function forDelete_ShangjiaCos($imgArray)
+    private function forDelete_ShangjiaCos($imgArray)
     {
         if (count($imgArray) > 0) {
             // 有图片，准备删除COS
@@ -170,7 +169,6 @@ class Shangjia
             $this->forDelete_ShangjiaCos($imgArray);
 
         } else {
-            // 没有图片，直接删除数据
             return true;
         }
     }

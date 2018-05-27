@@ -18,4 +18,10 @@ class Shangjia extends Model
     {
         return $this->hasMany('shangjiaimg', 'shangjia_id', 'id');
     }
+
+    // 关联->已发布的活动
+    public function withFabuhuodong()
+    {
+        return $this->hasMany('huodong', 'shangjia_id', 'id')->where('state',1);
+    }
 }

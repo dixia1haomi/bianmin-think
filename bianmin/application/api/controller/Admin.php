@@ -19,6 +19,7 @@ class Admin
 {
 
     // * 记录每天登陆过多少人 -- 查询formId有效的用户API传入天数实现
+    // * 发布活动时要让有活动的商家排在前面，除了改活动状态，还要改商家顶置状态让商家排在前
 
     // 获取admin令牌
     public function getAdminToken()

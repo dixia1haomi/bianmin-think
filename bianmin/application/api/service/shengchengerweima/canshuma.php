@@ -53,7 +53,7 @@ class canshuma
         // 把数据流转成图片保存到本地
         file_put_contents("/data/wwwroot/default/bianmin/public/erweima/" . $scene . ".jpeg", $da);
         // Image类处理图片
-        $haibao_base = Image::open('/data/wwwroot/default/bianmin/public/erweimamoban/bmxxfenxianghaibao.png');
+        $haibao_base = Image::open('/data/wwwroot/default/bianmin/public/erweimamoban/bmxxfenxianghaibao.jpg');
 
         $haibao_base->water("/data/wwwroot/default/bianmin/public/erweima/" . $scene . ".jpeg", 5)
             ->save("/data/wwwroot/default/bianmin/public/erweima/" . $scene . ".jpeg");

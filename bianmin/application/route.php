@@ -85,6 +85,28 @@ Route::post('api/shangjia/updateshangjiaimgurl', 'api/Shangjia/updateShangjiaImg
 Route::post('api/shangjia/deleteshangjiaimg', 'api/Shangjia/deleteShangjiaImg');                   // 删除商家IMG数据（删除商家img表一条数据）
 
 
+// ---------------------------------------------------------- 商家活动 ----------------------------------------------------------
+Route::post('api/huodong/createhuodong', 'api/Huodong/create_Huodong');                         // 新增活动
+Route::post('api/huodong/findhuodong', 'api/Huodong/find_Huodong');                             // 查询活动详情
+Route::post('api/huodong/selecthuodong', 'api/Huodong/select_Huodong');                         // 查询活动列表
+Route::post('api/huodong/deletehuodong', 'api/Huodong/delete_Huodong');                         // 删除活动
+
+// ----- 编辑活动基本资料 -----
+Route::post('api/huodong/xiugaihuodongtoutu', 'api/Huodong/xiugaiHuodong_toutu');           // 修改活动头图
+Route::post('api/huodong/xiugaihuodongbiaoti', 'api/Huodong/xiugaiHuodong_biaoti');         // 修改活动标题
+Route::post('api/huodong/xiugaihuodongyuanjia', 'api/Huodong/xiugaiHuodong_yuanjia');         // 修改活动原价
+Route::post('api/huodong/xiugaihuodonghuodongjia', 'api/Huodong/xiugaiHuodong_huodongjia');    // 修改活动价
+Route::post('api/huodong/xiugaihuodongshuliang', 'api/Huodong/xiugaiHuodong_shuliang');         // 修改活动数量
+Route::post('api/huodong/xiugaihuodongtiaojian', 'api/Huodong/xiugaiHuodong_tiaojian');         // 修改活动条件
+Route::post('api/huodong/xiugaihuodongtime', 'api/Huodong/xiugaiHuodong_time');         // 修改活动结束时间
+Route::post('api/huodong/xiugaihuodongshuoming', 'api/Huodong/xiugaiHuodong_shuoming');         // 修改活动说明
+
+// ----- 编辑活动图文详情 -----
+Route::post('api/huodong/createhuodongimg', 'api/Huodong/createHuodongImg');                 // 新增活动IMG数据（新增活动img表一条数据）
+Route::post('api/huodong/updatehuodongimgtext', 'api/Huodong/updateHuodongImg_text');          // 修改活动IMG里的text字段
+Route::post('api/huodong/updatehuodongimgurl', 'api/Huodong/updateHuodongImg_url');            // 修改活动IMG里的url字段
+Route::post('api/huodong/deletehuodongimg', 'api/Huodong/deleteHuodongImg');                   // 删除活动IMG数据（删除活动img表一条数据）
+
 // ---------------------------------------------------------- app.onError ----------------------------------------------------------
 
 Route::post('api/index/onerror', 'api/index/create_App_onError');                               // 记录app.js的错误
