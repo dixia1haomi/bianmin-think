@@ -59,7 +59,7 @@ Route::post('api/index/getphone', 'api/Index/getPhone');                // 获�
 Route::post('api/xinxi/leimu', 'api/Xinxi/leimuMoBan');
 
 // 分享信息二维码
-Route::post('api/xinxi/erweima', 'api/Xinxi/erweima');
+Route::post('api/xinxi/erweima', 'api/Xinxi/get_XinXi_DingZhi_erweima');            // 获取信息顶置二维码
 Route::post('api/xinxi/createbmxxdingzhi', 'api/Xinxi/createBmxxDingZhi_User');
 
 
@@ -91,6 +91,7 @@ Route::post('api/huodong/findhuodong', 'api/Huodong/find_Huodong');             
 Route::post('api/huodong/selecthuodong', 'api/Huodong/select_Huodong');                         // 查询活动列表
 Route::post('api/huodong/deletehuodong', 'api/Huodong/delete_Huodong');                         // 删除活动
 
+
 // ----- 编辑活动基本资料 -----
 Route::post('api/huodong/xiugaihuodongtoutu', 'api/Huodong/xiugaiHuodong_toutu');           // 修改活动头图
 Route::post('api/huodong/xiugaihuodongbiaoti', 'api/Huodong/xiugaiHuodong_biaoti');         // 修改活动标题
@@ -101,11 +102,31 @@ Route::post('api/huodong/xiugaihuodongtiaojian', 'api/Huodong/xiugaiHuodong_tiao
 Route::post('api/huodong/xiugaihuodongtime', 'api/Huodong/xiugaiHuodong_time');         // 修改活动结束时间
 Route::post('api/huodong/xiugaihuodongshuoming', 'api/Huodong/xiugaiHuodong_shuoming');         // 修改活动说明
 
+
 // ----- 编辑活动图文详情 -----
 Route::post('api/huodong/createhuodongimg', 'api/Huodong/createHuodongImg');                 // 新增活动IMG数据（新增活动img表一条数据）
 Route::post('api/huodong/updatehuodongimgtext', 'api/Huodong/updateHuodongImg_text');          // 修改活动IMG里的text字段
 Route::post('api/huodong/updatehuodongimgurl', 'api/Huodong/updateHuodongImg_url');            // 修改活动IMG里的url字段
 Route::post('api/huodong/deletehuodongimg', 'api/Huodong/deleteHuodongImg');                   // 删除活动IMG数据（删除活动img表一条数据）
+
+
+// ---------------------------------------- 参与活动 ------------------------------------
+Route::post('api/huodongcanyu/checkziji', 'api/Huodongcanyu/checkZiji');                 // 检查自己的参与结果
+Route::post('api/huodongcanyu/checkbieren', 'api/Huodongcanyu/checkBieren');             // 检查别人的参与结果
+Route::post('api/huodongcanyu/canyu', 'api/Huodongcanyu/create_Canyu');                  // 参与活动
+Route::post('api/huodongcanyu/zhuli', 'api/Huodongcanyu/create_Zhuli');                  // 为别人助力
+Route::post('api/huodongcanyu/lingqu', 'api/Huodongcanyu/create_Lingqu');                // 领取
+Route::post('api/huodongcanyu/erweima', 'api/Huodongcanyu/get_HuoDong_ZhuLi_erweima');   // 获取活动助力二维码
+Route::post('api/huodongcanyu/juandetail', 'api/Huodongcanyu/get_Lingqu_Detail');         // 查询活动劵详情
+Route::post('api/huodongcanyu/juanlist', 'api/Huodongcanyu/get_Lingqu_List');         // 查询活动劵列表
+Route::post('api/huodongcanyu/hexiao', 'api/Huodongcanyu/hexiaoHuodongJuan');            // 核销劵
+
+
+//Route::post('api/huodongcanyu/ziji', 'api/Huodongcanyu/find_Canyu_ziji');                      // 查询自己的参与表数据
+//Route::post('api/huodongcanyu/bieren', 'api/Huodongcanyu/find_Canyu_bieren');                  // 查询别人的参与表数据
+//Route::post('api/huodongcanyu/lingqu', 'api/Huodongcanyu/create_Lingquhuodong');
+
+
 
 // ---------------------------------------------------------- app.onError ----------------------------------------------------------
 

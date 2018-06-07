@@ -2,8 +2,8 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/5/5 0005
- * Time: 上午 10:59
+ * Date: 2018/5/28 0028
+ * Time: 下午 12:35
  */
 
 namespace app\api\service\shengchengerweima;
@@ -11,11 +11,9 @@ namespace app\api\service\shengchengerweima;
 
 use app\api\service\AccessToken;
 use app\exception\ErWeiMaException;
-use app\exception\Success;
 use think\Image;
 
-
-class canshuma
+class XinxiDingZhiErweima
 {
     // 生成可带参数的小程序码接口B，不限制数量
     private $sendUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?" . "access_token=%s";
@@ -28,8 +26,7 @@ class canshuma
         $this->sendUrl = sprintf($this->sendUrl, $token);
     }
 
-
-    // 获得小程序码返回路径
+    // 获得小程序码
     public function getCanShuMa($scene)
     {
         // header('content-type:image/jpg');
@@ -47,7 +44,7 @@ class canshuma
         $nda = strpos($da, "errcode");
         if ($nda !== false) {
             // 可能有错误,生成二维码出现errcode
-            throw new ErWeiMaException(['msg'=>'向微信请求的二维码返回的二进制流值中包含errcode']);
+            throw new ErWeiMaException(['msg' => '向微信请求的二维码返回的二进制流值中包含errcode,XinxiDingZhiErweima']);
         }
 
         // 把数据流转成图片保存到本地
@@ -60,5 +57,4 @@ class canshuma
 
         return '/erweima/' . $scene . '.jpeg';
     }
-
 }

@@ -25,7 +25,7 @@ class Token
         $usertoken = new UserToken($code); //接受code，在构造函数中封装微信获取openid的url
 
         // 这个方法2018/04/30添加了登陆态检查返回
-        // $token = ['token_key' => $tokenKey, 'loginstate' => $loginState];
+        // $token = ['token_key' => $tokenKey, 'loginstate' => $loginState, 'uid' => $uid];
         $token = $usertoken->get_Token_Service();
 
         throw new Success(['data' => $token]); //返回一个json对象（直接返回$token是json字符串）
@@ -51,8 +51,9 @@ class Token
             throw new Success(['data' => ['token' => false]]);
         } else {
             // token有效，检查登录态
+            $cache = json_decode($cache, true);
             $loginState = $this->checkformId($cache);
-            throw new Success(['data' => ['token' => true, 'loginstate' => $loginState]]);
+            throw new Success(['data' => ['token' => true, 'loginstate' => $loginState, 'uid' => $cache['uid']]]);
         }
     }
 
@@ -61,12 +62,10 @@ class Token
     // 检查并返回登录态
     private function checkformId($cache)
     {
-        $cache = json_decode($cache, true);
-
         $userModel = new UserModel();
         $user = $userModel->where('id', $cache['uid'])->find();
         if ($user === false) {
-            throw new QueryDbException(['msg'=>'checkformId']);
+            throw new QueryDbException(['msg' => 'checkformId']);
         }
 
         // 检查formID

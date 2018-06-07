@@ -67,11 +67,10 @@ class UserToken
         $user = UserModel::getByOpenid($openid);
         if ($user) {
             // 增加访问量
-            $inc = $user->setInc('fangwen',1);
-            if($inc === false){
-                throw new QueryDbException(['msg'=>'grantToken增加访问量']);
+            $inc = $user->setInc('fangwen', 1);
+            if ($inc === false) {
+                throw new QueryDbException(['msg' => 'grantToken增加访问量']);
             }
-
             $uid = $user->id;
         } else {
             $uid = UserModel::create_user($openid); // 携带openid和用户信息去创建用户
@@ -97,7 +96,7 @@ class UserToken
         // 检查并返回登录态(2018/04/30添加的登陆态检查)
         $loginState = $this->checkformId($uid);
 
-        return ['token_key' => $tokenKey, 'loginstate' => $loginState];
+        return ['token_key' => $tokenKey, 'loginstate' => $loginState, 'uid' => $uid];
     }
 
     // 2018/04/30添加的登陆态检查
@@ -108,12 +107,12 @@ class UserToken
         $userModel = new UserModel();
         $user = $userModel->where('id', $uid)->find();
         if ($user === false) {
-            throw new QueryDbException(['msg'=>'checkformId']);
+            throw new QueryDbException(['msg' => 'checkformId']);
         }
         // 设置登录态
-        if($user['form_id'] === ''){
+        if ($user['form_id'] === '') {
             $loginState = false;
-        }else{
+        } else {
             $loginState = true;
         }
         return $loginState;

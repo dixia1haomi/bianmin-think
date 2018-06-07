@@ -18,6 +18,7 @@ use app\api\service\mobanxiaoxi\HuifuMoban;
 use app\api\service\mobanxiaoxi\LiuyanMoban;
 
 use app\api\service\BaseToken;
+use app\api\service\shengchengerweima\XinxiDingZhiErweima;
 use app\exception\QueryDbException;
 use app\exception\Success;
 use app\api\controller\Cos as cosCon;
@@ -463,10 +464,10 @@ class Xinxi
     }
 
     // ---------------------------------------------------------------- 获得信息分享二维码 ----------------------------------------------------------------
-    public function erweima($scene)
+    public function get_XinXi_DingZhi_erweima($scene)
     {
-        $canshuma = new canshuma();
-        $erweima = $canshuma->getCanShuMa($scene);
+        $xinxierweima = new XinxiDingZhiErweima();
+        $erweima = $xinxierweima->getCanShuMa($scene);
         if ($erweima === false) {
             // * 这里应该醒目提示，分享失败很伤！！
             throw new Success(['msg' => '生成失败', 'data' => null]);
