@@ -37,5 +37,9 @@ class Bianminlist extends Model
         return $this->hasMany('bmxxdingzhijilu', 'bmxx_id', 'id')->with(['withDingzhiuser']);
     }
 
-
+    // 关联->bianminkuozhan
+    public function withKuozhan()
+    {
+        return $this->hasOne('bianminkuozhan', 'bmxx_id', 'id');
+    }
 }

@@ -15,11 +15,13 @@ use app\api\model\BmxxShuaxinJilu as bmxxshuaxinjiluModel;
 use app\api\model\Shangjia as shangjiaModel;
 
 use app\api\service\mobanxiaoxi\BianminShuaXinMoban;
+use app\api\service\mobanxiaoxi\ShanchuChezhaoren;
 use app\api\service\mobanxiaoxi\ShangjiaShuaXinMoban;
 use app\api\service\mobanxiaoxi\UserguoqiMoban;
 use app\exception\QueryDbException;
 use app\exception\Success;
 use think\Log;
+use app\api\service\mobanxiaoxi\ShanchuRenzhaoche;
 
 class Crontab
 {
@@ -177,7 +179,7 @@ class Crontab
         // form_id到期提醒刷新推送，查询有formid的便民信息
         $bianminlistModel = new bianminlistModel();
 
-        $time3 = time() - (60 * 60 * 24 * 3);    // 3天前以外
+        $time3 = time() - (60 * 1);    // 3天前以外
         $bianmin = $bianminlistModel->where('form_id', '<>', '')->whereTime('update_time', '<', $time3)->limit(3)->select();
         if ($bianmin === false) {
             throw new QueryDbException(['msg' => 'crontab便民信息刷新提醒查询失败crontab_CheckBianMinListFormId']);
@@ -270,7 +272,7 @@ class Crontab
                 'type' => 'File',
                 'path' => LOG_PATH_SHANGJIA_SHUAXIN,   // 自定义的日志文件路径
             ]);
-            Log::record('商家刷新模板消息发送失败，商家ID---' . $value['id'] .'用户ID---'.$value['user_id']. '错误原因---' . $backMsg['errmsg'], 'info');
+            Log::record('商家刷新模板消息发送失败，商家ID---' . $value['id'] . '用户ID---' . $value['user_id'] . '错误原因---' . $backMsg['errmsg'], 'info');
 
             // 更新商家表
             $res = $shangjiaModel->where('id', $value['id'])->update(['form_state' => -1, 'form_id' => '']);
@@ -280,5 +282,65 @@ class Crontab
         }
     }
 
+
+    // -------------------------------------------------- 删除人找车 --------------------------------------------------
+    // -------------------------------------------------- 删除人找车 --------------------------------------------------
+
+    public function crontab_delete_renzhaoche()
+    {
+        // 获得人找车
+        // 取日期时间数据和当前时间戳对比
+        $xinxiList = new bianminlistModel();
+        $renzhaoche = $xinxiList->where('leibie', '人找车')->where('biaoji', '<>', 0)->select();
+
+        // 如果有数据
+        if (count($renzhaoche) > 0) {
+            foreach ($renzhaoche as $key => $value) {
+                // 获取删除时间戳
+                $time_c = $value['biaoji'];
+                // 对比当前时间 -> 当前时间 > 设置的时间 ： 则删除数据
+                if (time() > $time_c) {
+                    // 发送模板消息
+                    if ($value['form_id'] != '') {
+                        (new ShanchuRenzhaoche())->sendShanchuRenzhaocheMessage($value);
+                    }
+
+                    // 删除信息
+                    $XinXi = new Xinxi();
+                    $XinXi->deleteMyfabu($value['id']);
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------- 删除车找人 --------------------------------------------------
+    // -------------------------------------------------- 删除车找人 --------------------------------------------------
+
+    public function crontab_delete_chezhaoren()
+    {
+        // 获得车找人
+        // 取日期时间数据和当前时间戳对比
+        $xinxiList = new bianminlistModel();
+        $chezhaoren = $xinxiList->where(['leibie' => '车找人'])->where('biaoji', '<>', 0)->select(); // 优化 : * where时间倒序只查最后发布的20条 (该删的在20条的间隔时间里应该都删了)
+
+        // 如果有数据
+        if (count($chezhaoren) > 0) {
+            foreach ($chezhaoren as $key => $value) {
+                // 获取删除时间戳
+                $time_c = $value['biaoji'];
+                // 对比当前时间 -> 当前时间 > 设置的时间 ： 则删除数据
+                if (time() > $time_c) {
+                    // 发送模板消息
+                    if ($value['form_id'] != '') {
+                        (new ShanchuChezhaoren())->sendShanchuChezhaorenMessage($value);
+                    }
+
+                    // 删除信息
+                    $XinXi = new Xinxi();
+                    $XinXi->deleteMyfabu($value['id']);
+                }
+            }
+        }
+    }
 
 }

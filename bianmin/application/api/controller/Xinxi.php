@@ -9,6 +9,7 @@
 namespace app\api\controller;
 
 use app\api\model\Bianminlist as bianminlistModel;
+use app\api\model\Bianminkuozhan as bianminkuozhanModel;
 use app\api\model\Img as imgModel;
 use app\api\model\Liuyan as liuyanModel;
 use app\api\model\Huifu as huifuModel;
@@ -19,35 +20,51 @@ use app\api\service\mobanxiaoxi\LiuyanMoban;
 
 use app\api\service\BaseToken;
 use app\api\service\shengchengerweima\XinxiDingZhiErweima;
+use app\exception\ExceptionHandler;
 use app\exception\QueryDbException;
 use app\exception\Success;
 use app\api\controller\Cos as cosCon;
+use think\Db;
 
 class Xinxi
 {
 
+    /**
+     * 删除信息：使用事务
+     * 新增信息：使用事务
+     */
 
     // ---------------------------------------------------------------- 增删改查 ----------------------------------------------------------------
 
     // 获取信息列表
-    public function getList($page = 1)
+    public function getList()
     {
-        // 接受分页参数
+        $page = input('post.page');
+        $leibie = input('post.leibie');
+
         $model = new bianminlistModel();
-        $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 20)->select();
+        if ($leibie == '全部') {
+            $data = $model->with(['withUser', 'withImg', 'withLiuyan'])->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 20)->select();
+        } else {
+            $data = $model->where(['leibie' => $leibie])->with(['withUser', 'withImg', 'withLiuyan'])->order(['dingzhi_state' => 'desc', 'update_time' => 'desc'])->page($page, 20)->select();
+        }
+
         if ($data === false) {
-            throw new QueryDbException(['msg'=>'getList']);
+            throw new QueryDbException(['msg' => 'getList']);
         }
 
         // 添加hid = false,用于客户端对应信息展开折叠,$data是数组并且不为空
         if (is_array($data) && !empty($data)) {
             foreach ($data as $key => $value) {
-                $value['hid'] = false;
+                // 处理时间
                 $value['time'] = format_date($value['update_time']);
+                // 处理扩展
+                if ($value['kuozhan']) {
+                    $value['kuozhan'] = json_decode($value['kuozhan']);
+                }
                 // 增加所有查询的流浪次数
                 // $model->where('id',$value['id'])->setInc('liulangcishu');
             }
-
         }
         throw new Success(['data' => $data]);
     }
@@ -58,32 +75,70 @@ class Xinxi
         $bianminModel = new bianminlistModel();
         $bianmin = $bianminModel->where('id', $id)->with(['withUser', 'withImg', 'withLiuyan', 'withBangdinguser'])->find();
         if ($bianmin === false) {
-            throw new QueryDbException(['msg'=>'findBianmin']);
+            throw new QueryDbException(['msg' => 'findBianmin']);
         }
 
         // 添加hid = false,用于客户端对应信息展开折叠,不判断有可能是null而又没有update_time字段报错
         if ($bianmin) {
-            $bianmin['hid'] = false;
             $bianmin['time'] = format_date($bianmin['update_time']);
+            $bianmin['kuozhan'] = json_decode($bianmin['kuozhan']);
+            // 添加顶置时间输出
+            if ($bianmin['dingzhi_state'] == 1) {
+                $bianmin['dingzhi_time'] = date("Y/m/d H:i:s", $bianmin['dingzhi_time']);
+            }
         }
         throw new Success(['data' => $bianmin]);
     }
 
-    // 创建便民信息
-    public function createList()
+    // -- API -- 创建便民信息
+    public function createList($params)
     {
-        $params = input('post.');
+        // params = { leibie:'xx' , neirong:'xx' , kuozhan:{}  }
+
+        // params中可能有img,需要删除
+        // 数组中是否包含某个key
+        if (array_key_exists('img', $params)) {
+            // 根据key删除指定元素
+            unset($params['img']);
+        }
+
+        // * 单独类目处理
+        if ($params['leibie'] == '人找车') {
+            // 人找车 || 车找人 检查出发日期 如果不是每天,需要在biaoji字段加入删除时间,用于模板推送提醒,客户端日期为:X月X日,时间为XX:XX
+            if ($params['kuozhan']['renzhaoche_riqi'] != '每天') {
+                // 获取日期-时间 转成时间戳 写入biaoji字段
+                $str = date('Y') . '年' . $params['kuozhan']['renzhaoche_riqi'] . $params['kuozhan']['renzhaoche_zuiwanshijian'];
+                $arr = date_parse_from_format('Y年m月d日H:i', $str);
+                $time = mktime($arr['hour'], $arr['minute'], 0, $arr['month'], $arr['day'], $arr['year']);
+                // 把时间戳加入到$params里
+                $params['biaoji'] = $time;
+            }
+        }elseif($params['leibie'] == '车找人'){
+            if ($params['kuozhan']['chezhaoren_riqi'] != '每天') {
+                // 获取日期-时间 转成时间戳 写入biaoji字段
+                $str = date('Y') . '年' . $params['kuozhan']['chezhaoren_riqi'] . $params['kuozhan']['chezhaoren_zuiwanshijian'];
+                $arr = date_parse_from_format('Y年m月d日H:i', $str);
+                $time = mktime($arr['hour'], $arr['minute'], 0, $arr['month'], $arr['day'], $arr['year']);
+                // 把时间戳加入到$params里
+                $params['biaoji'] = $time;
+            }
+        }
+
+        // 处理扩展
+        $params['kuozhan'] = json_encode($params['kuozhan']);
         // 获取用户ID
         $uid = BaseToken::get_Token_Uid();
         $params['user_id'] = $uid;
 
+        // 写入便民表
         $model = new bianminlistModel();
         $res = $model->create($params);
         if ($res === false) {
-            throw new QueryDbException(['msg'=>'createList']);
+            throw new QueryDbException(['msg' => 'createList-base']);
         }
         throw new Success(['data' => $res]);
     }
+
 
     // 创建信息图片
     public function createImg()
@@ -93,7 +148,7 @@ class Xinxi
         $model = new imgModel();
         $res = $model->create($params);
         if ($res === false) {
-            throw new QueryDbException(['msg'=>'createImg']);
+            throw new QueryDbException(['msg' => 'createImg']);
         }
         throw new Success(['data' => $res]);
     }
@@ -104,33 +159,17 @@ class Xinxi
         $uid = BaseToken::get_Token_Uid();
 
         $model = new bianminlistModel();
-        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg', 'withLiuyan', 'withBangdinguser'])->find();
+        $res = $model->where('user_id', $uid)->with(['withUser', 'withImg', 'withLiuyan', 'withBangdinguser'])->select();
         if ($res === false) {
-            throw new QueryDbException(['msg'=>'getMyfabu']);
+            throw new QueryDbException(['msg' => 'getMyfabu']);
         }
 
-        if ($res) {
-            // 添加hid = false,用于客户端对应信息展开折叠
-            $res['hid'] = false;
-            $res['time'] = format_date($res['update_time']);
-            // 添加顶置时间输出
-            if ($res['dingzhi_state'] == 1) {
-                $res['dingzhi_time'] = date("Y/m/d H:i:s", $res['dingzhi_time']);
-            }
-
-            // 检查我的发布里的formId是否过期并设置标识位让前端判断是否显示留言提醒按钮（按钮更新formId）
-            if (empty($res['form_id'])) {
-                $res['form_state'] = false;
-            } else {
-                // 检查form_id是否有效
-                $dt = time();           // 当前时间
-                $update_time = strtotime($res['update_time']);
-                $ShiJianCha = $dt - $update_time;
-                // 大于7天过期
-                if ($ShiJianCha > 604800) {
-                    $res['form_state'] = false;
-                } else {
-                    $res['form_state'] = true;
+        if (count($res) > 0) {
+            foreach ($res as $value) {
+                $value['time'] = format_date($value['update_time']);
+                $value['kuozhan'] = json_decode($value['kuozhan']);
+                if ($value['dingzhi_state'] == 1) {
+                    $value['dingzhi_time'] = date("Y/m/d H:i:s", $value['dingzhi_time']);
                 }
             }
         }
@@ -138,19 +177,19 @@ class Xinxi
     }
 
     // 修改便民信息内容
-    public function edit_Bianmin_Neirong()
-    {
-        $id = input('post.id');
-        $neirong = input('post.neirong');
-
-        $model = new bianminlistModel();
-        $res = $model->where('id', $id)->setField('neirong', $neirong);
-
-        if ($res === false) {
-            throw new QueryDbException(['msg'=>'edit_Bianmin_Neirong']);
-        }
-        throw new Success(['data' => $res]);
-    }
+//    public function edit_Bianmin_Neirong()
+//    {
+//        $id = input('post.id');
+//        $neirong = input('post.neirong');
+//
+//        $model = new bianminlistModel();
+//        $res = $model->where('id', $id)->setField('neirong', $neirong);
+//
+//        if ($res === false) {
+//            throw new QueryDbException(['msg' => 'edit_Bianmin_Neirong']);
+//        }
+//        throw new Success(['data' => $res]);
+//    }
 
 
     // 增加便民信息点击量
@@ -162,44 +201,44 @@ class Xinxi
 
         if ($liulangcishu === false) {
             // 增加流浪次数失败了
-            throw new QueryDbException(['msg'=>'incLiulangcishu']);
+            throw new QueryDbException(['msg' => 'incLiulangcishu']);
         }
         throw new Success(['data' => $liulangcishu]);
     }
 
 
     // 刷新信息， 更新update_time
-    public function updateTime()
-    {
-        $id = input('post.id');
-        $model = new bianminlistModel();
-
-        // 限制刷新时间
-        // 获取数据库上次更新时间对比当前时间，大于24小时更新，否则返回提示
-        $updatetime = $model->where(['id' => $id])->field('update_time')->find();
-        if ($updatetime === false) {
-            throw new QueryDbException(['msg'=>'updateTime']);
-        }
-
-        $now_time = date("Y-m-d H:i:s", time());
-        $now_time = strtotime($now_time);                       // 当前时间
-        $show_time = strtotime($updatetime['update_time']);     // 数据库时间
-        $t = $show_time + 21600;                                // 数据库时间 + 6小时（可刷新时间）
-
-        // 当前时间大于可刷新时间就更新
-        if ($now_time > $t) {
-            $updatetime = $model->where(['id' => $id])->setField('update_time', time());
-            if ($updatetime === false) {
-                // 数据库问题刷新更新时间失败
-                throw new QueryDbException(['msg'=>'updateTime1']);
-            }
-            throw new Success(['data' => '刷新成功']);
-        } else {
-            // 不到24小时，提示还有多长时间能刷新
-            $t = date('H:i', $t);
-            throw new Success(['data' => '这条信息需要' . $t . '以后才能刷新']);
-        }
-    }
+//    public function updateTime()
+//    {
+//        $id = input('post.id');
+//        $model = new bianminlistModel();
+//
+//        // 限制刷新时间
+//        // 获取数据库上次更新时间对比当前时间，大于24小时更新，否则返回提示
+//        $updatetime = $model->where(['id' => $id])->field('update_time')->find();
+//        if ($updatetime === false) {
+//            throw new QueryDbException(['msg' => 'updateTime']);
+//        }
+//
+//        $now_time = date("Y-m-d H:i:s", time());
+//        $now_time = strtotime($now_time);                       // 当前时间
+//        $show_time = strtotime($updatetime['update_time']);     // 数据库时间
+//        $t = $show_time + 21600;                                // 数据库时间 + 6小时（可刷新时间）
+//
+//        // 当前时间大于可刷新时间就更新
+//        if ($now_time > $t) {
+//            $updatetime = $model->where(['id' => $id])->setField('update_time', time());
+//            if ($updatetime === false) {
+//                // 数据库问题刷新更新时间失败
+//                throw new QueryDbException(['msg' => 'updateTime1']);
+//            }
+//            throw new Success(['data' => '刷新成功']);
+//        } else {
+//            // 不到24小时，提示还有多长时间能刷新
+//            $t = date('H:i', $t);
+//            throw new Success(['data' => '这条信息需要' . $t . '以后才能刷新']);
+//        }
+//    }
 
 
     // 删除我的发布
@@ -209,31 +248,44 @@ class Xinxi
         $imgModel = new imgModel();
         $imgArray = $imgModel->where('list_id', $list_id)->select();
         if ($imgArray === false) {
-            throw new QueryDbException(['msg'=>'deleteMyfabu']);
+            throw new QueryDbException(['msg' => 'deleteMyfabu']);
         }
+
 
         // 删除关联的COS图片和IMG表数据
         $this->forDelete($imgArray);
 
+        Db::startTrans();
         // 删除关联的回复
         $huifuModel = new huifuModel();
         $huifu = $huifuModel->where('bmxx_id', $list_id)->delete();
         if ($huifu === false) {
-            throw new QueryDbException(['msg'=>'deleteMyfabu删除关联的回复']);
+            Db::rollback();
+            throw new QueryDbException(['msg' => 'deleteMyfabu删除关联的回复']);
         }
 
         // 删除关联的留言
         $liuyanModel = new liuyanModel();
         $liuyan = $liuyanModel->where('bmxx_id', $list_id)->delete();
         if ($liuyan === false) {
-            throw new QueryDbException(['msg'=>'deleteMyfabu删除关联的留言']);
+            Db::rollback();
+            throw new QueryDbException(['msg' => 'deleteMyfabu删除关联的留言']);
+        }
+
+        // 删除信息扩展
+        $kuozhanModel = new bianminkuozhanModel();
+        $kuozhan = $kuozhanModel->where('bmxx_id', $list_id)->delete();
+        if ($kuozhan === false) {
+            Db::rollback();
+            throw new QueryDbException(['msg' => 'deleteMyfabu删除信息扩展']);
         }
 
         // 删除帮顶数据
         $bmxxdingzhijiluModel = new bmxxdngzhijiluModel();
         $dingzhijilu = $bmxxdingzhijiluModel->where('bmxx_id', $list_id)->delete();
         if ($dingzhijilu === false) {
-            throw new QueryDbException(['msg'=>'deleteMyfabu删除帮顶数据']);
+            Db::rollback();
+            throw new QueryDbException(['msg' => 'deleteMyfabu删除帮顶数据']);
         }
 
         // 删除这条信息的分享码
@@ -249,8 +301,10 @@ class Xinxi
         $bianminModel = new bianminlistModel();
         $bianmin = $bianminModel->where('id', $list_id)->delete();
         if ($bianmin === false) {
-            throw new QueryDbException(['msg'=>'deleteMyfabu删除信息']);
+            Db::rollback();
+            throw new QueryDbException(['msg' => 'deleteMyfabu删除信息']);
         }
+        Db::commit();
         throw new Success(['data' => ['liuyan' => $liuyan, 'huifu' => $huifu, 'bianmin' => $bianmin]]);
     }
 
@@ -267,11 +321,13 @@ class Xinxi
 
 //            if ($cosdelete['code'] == 0) {
             // COS返回成功，继续删除IMG表
+
             $imgModel = new imgModel();
             $imgres = $imgModel->where('id', $imgArray[0]['id'])->delete();
             if ($imgres === false) {
-                throw new QueryDbException(['msg'=>'forDelete']);
+                throw new QueryDbException(['msg' => 'forDelete']);
             }
+
 
             unset($imgArray[0]);                    // 删除$imgArray[0]
             $imgArray = array_values($imgArray);    // 使用 unset 并未改变数组的原有索引。如果打算重排索引（让索引从0开始，并且连续），可以使用 array_values
@@ -301,45 +357,47 @@ class Xinxi
         // 1.防止重复顶置--根据信息ID查询便民信息顶置表中是否存在此用户
         $uid = BaseToken::get_Token_Uid();
         $bmxxdngzhijilumodel = new bmxxdngzhijiluModel();
-        $model = $bmxxdngzhijilumodel->where(['bmxx_id' => $id, 'user_id' => $uid])->find();
-        if ($model === false) {
-            throw new QueryDbException(['msg'=>'createBmxxDingZhi_User1']);
+        $dingzhi = $bmxxdngzhijilumodel->where(['bmxx_id' => $id, 'user_id' => $uid])->find();
+        if ($dingzhi === false) {
+            throw new QueryDbException(['msg' => 'createBmxxDingZhi_User1']);
         }
 
         // 如果用户存在，已经顶过了，抛出
-        if ($model) {
-            throw new Success(['msg' => '已经顶过了', 'data' => $model]);
-        }
-
-        // 2.新增顶置用户表数据
-        $res = $bmxxdngzhijilumodel->create(['bmxx_id' => $id, 'user_id' => $uid]);
-        if ($res === false) {
-            throw new QueryDbException(['msg'=>'createBmxxDingZhi_User2']);
-        }
-
-        // 3.更新便民信息表信息顶置时间，顶置状态 (使用实例化后的防止update_time时间被更新导致from_id有效期出现误差)
-        $bianminlistModel = new bianminlistModel();
-
-        // 总顶置时间 = 已有顶置时间 + 24小时，所以提前判断已有顶置时间是否有（字段是int类型默认0）
-        $dingzhi_time = $bianminlistModel->where('id', $id)->value('dingzhi_time');
-        if ($dingzhi_time === false) {
-            throw new QueryDbException(['msg'=>'createBmxxDingZhi_User3']);
-        }
-
-        // 如果没有顶置过，取当前时间+24小时，否则取已有的顶置时间+24小时
-        if ($dingzhi_time === 0) {
-            $dztime = time() + (60 * 60 * 24);
+        if ($dingzhi) {
+            // 顶过了
+            throw new Success(['msg' => '您已经顶置过了', 'data' => $dingzhi]);
         } else {
-            $dztime = $dingzhi_time + (60 * 60 * 24);
+            // 开启事务
+            Db::startTrans();
+            // 没顶过，新增顶置数据
+            $res = $bmxxdngzhijilumodel->create(['bmxx_id' => $id, 'user_id' => $uid]);
+            if ($res === false) {
+                Db::rollback();
+                throw new QueryDbException(['msg' => 'createBmxxDingZhi_User2']);
+            }
+            // 3.更新便民信息表信息顶置时间，顶置状态 (使用实例化后的防止update_time时间被更新导致from_id有效期出现误差)
+            $bianminlistModel = new bianminlistModel();
+            // 总顶置时间 = 已有顶置时间 + 24小时，所以提前判断已有顶置时间是否有（字段是int类型默认0）
+            $dingzhi_time = $bianminlistModel->where('id', $id)->value('dingzhi_time');
+            if ($dingzhi_time === false) {
+                Db::rollback();
+                throw new QueryDbException(['msg' => 'createBmxxDingZhi_User3']);
+            }
+            // 如果没有顶置过，取当前时间+24小时，否则取已有的顶置时间+24小时
+            if ($dingzhi_time === 0) {
+                $dztime = time() + (60 * 60 * 24);
+            } else {
+                $dztime = $dingzhi_time + (60 * 60 * 24);
+            }
+            // 更新顶置状态和顶置时间
+            $bianmin = $bianminlistModel->where('id', $id)->setField(['dingzhi_state' => 1, 'dingzhi_time' => $dztime]);
+            if ($bianmin === false) {
+                Db::rollback();
+                throw new QueryDbException(['msg' => 'createBmxxDingZhi_User4']);
+            }
+            Db::commit();
+            throw new Success(['msg' => '帮顶成功', 'data' => $res]);
         }
-
-        // 更新顶置状态和顶置时间
-        $bianmin = $bianminlistModel->where('id', $id)->setField(['dingzhi_state' => 1, 'dingzhi_time' => $dztime]);
-        if ($bianmin === false) {
-            throw new QueryDbException(['msg'=>'createBmxxDingZhi_User4']);
-        }
-
-        throw new Success(['msg' => 'ok', 'data' => $res]);
     }
 
 
@@ -351,35 +409,51 @@ class Xinxi
     {
         $uid = BaseToken::get_Token_Uid();
 
-        $bmxx_id = input('post.bmxx_id');
+        $id = input('post.bmxx_id');
         $neirong = input('post.neirong');
         $form_id = input('post.form_id');
 
         $model = new liuyanModel();
         // 新增便民留言数据
         $lyxx = $model->create([
-            'bmxx_id' => $bmxx_id,
+            'bmxx_id' => $id,
             'neirong' => $neirong,
             'user_id' => $uid,
             'form_id' => $form_id
         ]);
         if ($lyxx === false) {
-            throw new QueryDbException(['msg'=>'create_Bianmin_Liuyan']);
-            // res =
-            // bmxx_id:"86"
-            // id:"2"
-            // neirong:"qwe"
-            // user_id:2
+            throw new QueryDbException(['msg' => 'create_Bianmin_Liuyan']);
         }
 
         // 查询新信息返回客户端（局部刷新）
-        $bmxx = $this->findBianminXinxi($bmxx_id);
+        $bmxx = $this->findBianminXinxi($id);
 
         // 发送留言模板消息给信息主人(留言数据,便民数据)
         $message = new LiuyanMoban();
         $bmMsg = $message->sendLiuyanMessage($lyxx, $bmxx);
 
         throw new Success(['data' => $bmxx, 'msg' => $bmMsg]);
+    }
+
+    // 私有查询单个便民信息（接受信息ID，用于留言回复局部刷新）
+    private function findBianminXinxi($id)
+    {
+        $bianminModel = new bianminlistModel();
+        $bianmin = $bianminModel->where('id', $id)->with(['withUser', 'withImg', 'withLiuyan', 'withKuozhan', 'withBangdinguser'])->find();
+        if ($bianmin === false) {
+            throw new QueryDbException(['msg' => 'findBianmin']);
+        }
+
+        // 添加hid = false,用于客户端对应信息展开折叠,不判断有可能是null而又没有update_time字段报错
+        if ($bianmin) {
+            $bianmin['time'] = format_date($bianmin['update_time']);
+            $bianmin['kuozhan'] = json_decode($bianmin['kuozhan']);
+            // 添加顶置时间输出
+            if ($bianmin['dingzhi_state'] == 1) {
+                $bianmin['dingzhi_time'] = date("Y/m/d H:i:s", $bianmin['dingzhi_time']);
+            }
+        }
+        return $bianmin;
     }
 
 
@@ -409,13 +483,13 @@ class Xinxi
             'neirong' => $neirong
         ]);
         if ($hfxx === false) {
-            throw new QueryDbException(['msg'=>'create_Bianmin_Huifu']);
+            throw new QueryDbException(['msg' => 'create_Bianmin_Huifu']);
         }
 
         // 更新便民信息的form_id
         $bianminModel = bianminlistModel::update(['form_id' => $form_id], ['id' => $bmxx_id]);
         if ($bianminModel === false) {
-            throw new QueryDbException(['msg'=>'create_Bianmin_Huifu1']);
+            throw new QueryDbException(['msg' => 'create_Bianmin_Huifu1']);
         }
 
         // 发送回复模板消息给留言人(留言数据,便民数据)
@@ -426,31 +500,12 @@ class Xinxi
     }
 
 
-    // 私有查询单个便民信息（接受信息ID，用于留言回复局部刷新）
-    private function findBianminXinxi($bmxx_id)
-    {
-        $bianminModel = new bianminlistModel();
-        $bianmin = $bianminModel->where('id', $bmxx_id)->with(['withUser', 'withImg', 'withLiuyan'])->find();
-        if ($bianmin === false) {
-            throw new QueryDbException(['msg'=>'findBianminXinxi']);
-        }
-
-        // 添加hid = false,用于客户端对应信息展开折叠
-        if ($bianmin) {
-            $bianmin['hid'] = true;
-            $bianmin['time'] = format_date($bianmin['update_time']);
-        }
-
-        return $bianmin;
-    }
-
-
-    // 新留言提醒我，我的发布页更新formId,接受信息ID
+    // 刷新，我的发布页更新formId,接受信息ID
     public function updateBianMinXinXiFormId()
     {
         $bianmin = bianminlistModel::update(['form_id' => input('post.form_id')], ['id' => input('post.id')]);
         if ($bianmin === false) {
-            throw new QueryDbException(['msg'=>'updateBianMinXinXiFormId']);
+            throw new QueryDbException(['msg' => 'updateBianMinXinXiFormId']);
         }
         throw new Success(['data' => $bianmin]);
     }

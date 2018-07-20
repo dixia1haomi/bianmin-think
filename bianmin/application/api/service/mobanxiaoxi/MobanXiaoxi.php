@@ -33,7 +33,7 @@ class MobanXiaoxi
         $this->sendUrl = sprintf($this->sendUrl, $token);
     }
 
-    // 开发工具中拉起的微信支付prepay_id是无效的，需要在真机上拉起支付
+    //
     protected function sendMessage($openID)
     {
 

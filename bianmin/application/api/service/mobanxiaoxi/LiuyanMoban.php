@@ -37,8 +37,8 @@ class LiuyanMoban extends MobanXiaoxi
 
             $this->tplID = self::MOBANXIAOXI_ID;                                    // 模板消息ID
             $this->formID = $bmxx->form_id;                                         // 信息表formID
-            $this->page = "pages/bmxx/myfabu";                                      // 进入路径
-            $this->createMessageData($lyxx);                                             // 创建模板消息的data数组
+            $this->page = "pages/index/index1";                                      // 进入路径
+            $this->createMessageData($lyxx);                                        // 创建模板消息的data数组
             $msgres = parent::sendMessage($openid);       // 条送发送模板消息携带openid
 
             if ($msgres['errcode'] == 0) {

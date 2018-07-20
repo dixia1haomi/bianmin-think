@@ -30,7 +30,7 @@ class BianminShuaXinMoban extends MobanXiaoxi
 
         $this->tplID = self::MOBANXIAOXI_ID;                            // 模板消息ID
         $this->formID = $form_id;                                       // formID
-        $this->page = 'pages/bmxx/myfabu';                             // 进入路径
+        $this->page = 'pages/index/index1';                             // 进入路径
         $this->createMessageData();                           // 创建模板消息的data数组
         $backmsg = parent::sendMessage($this->getOpenID($value['user_id']));                        // 条送发送模板消息携带openid
 
@@ -46,12 +46,12 @@ class BianminShuaXinMoban extends MobanXiaoxi
         $data = [
             // 温馨提示
             'keyword1' => [
-                'value' => '亲、该刷新信息了',
+                'value' => '您有信息获得了刷新权限',
             ],
 
             // 信息详情
             'keyword2' => [
-                'value' => '刷新信息可以让您的信息重新排序、展示在前排、长时间不刷新会导致信息没落，点击卡片、快去刷新吧。',
+                'value' => '刷新信息可以让您的信息重新排序、展示在前排、长时间不刷新会导致信息没落。',
                 'color' => '#27408B'
             ]
         ];
